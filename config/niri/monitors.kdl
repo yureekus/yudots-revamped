@@ -2,7 +2,6 @@
 // its sad that niri currently does not support auto monitor configuration like hyprland :(
 // ignore notes ending with *
 
-/*
 // eDP-3
 // ASUS*
 output "DP-3" {
@@ -20,4 +19,3 @@ output "eDP-1" {
     variable-refresh-rate
     focus-at-startup
 }
-*/
