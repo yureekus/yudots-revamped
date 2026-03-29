@@ -346,6 +346,7 @@ install_required_packages() {
         xorg-xwayland
         xwayland-satellite
         xdg-desktop-portal-gnome
+        waybar
         fuzzel
         mako
         swww
