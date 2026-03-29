@@ -374,8 +374,15 @@ install_required_packages() {
     )
 
     local -a font_and_theme_packages=(
+        ttf-dejavu
         ttf-firacode-nerd
+        ttf-liberation
+        ttf-ms-fonts
         otf-commit-mono-nerd
+        noto-fonts
+        noto-fonts-cjk
+        noto-fonts-emoji
+        noto-fonts-extra
         breeze-icons
         breeze-gtk
         qt6ct-kde
