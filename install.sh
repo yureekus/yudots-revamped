@@ -339,6 +339,8 @@ install_package_group() {
 install_required_packages() {
     local -a desktop_packages=(
         dbus
+        elogind
+        elogind-openrc
         seatd
         niri
         xorg-xwayland
@@ -354,7 +356,6 @@ install_required_packages() {
         pipewire
         wireplumber
         pipewire-pulse
-        pipewire-jack
         wiremix-git
     )
 
@@ -465,7 +466,7 @@ enable_service_in_default() {
 
 enable_core_services() {
     local dbus_service=""
-    local seatd_service=""
+    local elogind_service=""
     local bluetooth_service=""
 
     dbus_service="$(find_service_name dbus)" || {
@@ -473,15 +474,15 @@ enable_core_services() {
         return 1
     }
 
-    seatd_service="$(find_service_name seatd)" || {
-        error "could not find the openrc service for seatd"
+    elogind_service="$(find_service_name elogind)" || {
+        error "could not find the openrc service for elogind"
         return 1
     }
 
     enable_service_in_default "$dbus_service" || return 1
-    enable_service_in_default "$seatd_service" || return 1
+    enable_service_in_default "$elogind_service" || return 1
 
-    if bluetooth_service="$(find_service_name bluetooth bluez)"; then
+    if bluetooth_service="$(find_service_name bluetoothd)"; then
         enable_service_in_default "$bluetooth_service" || return 1
     else
         warn "bluetooth openrc service was not found, skipping it"
@@ -525,9 +526,23 @@ record_network_state() {
 }
 
 verify_networkmanager() {
-    run_cmd nmcli -t -f RUNNING general || return 1
-    run_cmd ping -c 1 -W 5 1.1.1.1 || return 1
-    run_cmd ping -c 1 -W 5 google.com
+    local attempt=""
+
+    if command -v nmcli >/dev/null 2>&1; then
+        run_cmd nmcli general status || true
+    fi
+
+    for attempt in 1 2 3 4 5; do
+        info "networkmanager connectivity check attempt $attempt of 5"
+
+        if run_cmd ping -c 1 -W 5 1.1.1.1 && run_cmd ping -c 1 -W 5 google.com; then
+            return 0
+        fi
+
+        sleep 2
+    done
+
+    return 1
 }
 
 restore_service_runlevels() {
@@ -757,11 +772,11 @@ main() {
     run_step "installing paru from source" install_paru_from_source || exit 1
     run_step "installing the required packages" install_required_packages || exit 1
     run_step "enabling the core openrc services" enable_core_services || exit 1
-    run_step "switching from connman to networkmanager when needed" handle_network_stack || exit 1
     run_step "copying the yudots config into place" copy_dotfiles || exit 1
     run_step "copying the bundled wallpapers" copy_wallpapers || exit 1
     run_step "seeding the default wallpaper and theme state" seed_default_wallpaper || exit 1
     run_step "making sure the default shell is bash" ensure_bash_login_shell || exit 1
+    run_step "switching from connman to networkmanager when needed" handle_network_stack || exit 1
     finish_message
 }
 
