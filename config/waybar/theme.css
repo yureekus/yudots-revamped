@@ -44,6 +44,12 @@
 @define-color hover-bg @md_surface_container_highest;
 @define-color hover-fg @md_on_surface;
 @define-color outline @md_surface_container_lowest;
+@define-color menu-br @md_outline;
+@define-color menu-bg @md_surface;
+@define-color menu-fg @md_on_surface;
+@define-color menu-hover-bg @md_primary_container;
+@define-color menu-hover-fg @md_on_primary_container;
+@define-color menu-muted-fg @md_on_surface_variant;
 
 @define-color workspaces @md_surface_container;
 @define-color temperature @md_surface_container;

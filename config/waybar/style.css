@@ -33,6 +33,72 @@ button:hover {
 	color: @hover-fg;
 }
 
+menu,
+.menu,
+.context-menu {
+	border: none;
+	border-radius: 0;
+	background-color: @menu-bg;
+	color: @menu-fg;
+	box-shadow: none;
+}
+menu menuitem,
+.menu menuitem,
+.context-menu menuitem {
+	min-height: 16px;
+	padding: 4px 6px;
+	border-radius: 0;
+	color: @menu-fg;
+	background-color: @menu-bg;
+}
+menu menuitem:disabled,
+.menu menuitem:disabled,
+.context-menu menuitem:disabled,
+menuitem accelerator,
+menu menuitem accelerator,
+.menu menuitem accelerator,
+.context-menu menuitem accelerator {
+	color: @menu-muted-fg;
+}
+menu menuitem:hover,
+.menu menuitem:hover,
+.context-menu menuitem:hover {
+	background-color: @menu-hover-bg;
+	color: @menu-hover-fg;
+}
+menu menuitem check,
+menu menuitem radio,
+menu menuitem image,
+menu menuitem arrow,
+.menu menuitem check,
+.menu menuitem radio,
+.menu menuitem image,
+.menu menuitem arrow,
+.context-menu menuitem check,
+.context-menu menuitem radio,
+.context-menu menuitem image,
+.context-menu menuitem arrow {
+	background-color: @menu-bg;
+	background-image: none;
+	box-shadow: none;
+	color: inherit;
+}
+menu menuitem:hover check,
+menu menuitem:hover radio,
+menu menuitem:hover image,
+menu menuitem:hover arrow,
+.menu menuitem:hover check,
+.menu menuitem:hover radio,
+.menu menuitem:hover image,
+.menu menuitem:hover arrow,
+.context-menu menuitem:hover check,
+.context-menu menuitem:hover radio,
+.context-menu menuitem:hover image,
+.context-menu menuitem:hover arrow {
+	background-color: @menu-hover-bg;
+	color: inherit;
+}
+
 tooltip {
 	border: 2px solid @main-br;
 	border-radius: 10px;
