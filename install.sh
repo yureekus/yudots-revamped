@@ -5,6 +5,7 @@ set -uo pipefail
 script_dir="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)"
 repo_config_dir="$script_dir/config"
 repo_wallpapers_dir="$script_dir/wallpapers"
+repo_system_dir="$script_dir/system"
 default_wallpaper_name="yureek_protogen.png"
 log_file="/tmp/yudots-revamped-install-$(date +%Y%m%d-%H%M%S).log"
 
@@ -257,6 +258,11 @@ check_repo_layout() {
         error "missing default wallpaper: $repo_wallpapers_dir/$default_wallpaper_name"
         return 1
     fi
+
+    if [[ ! -f "$repo_system_dir/udev/99-yudots-micmute-led.rules" ]]; then
+        error "missing udev rule: $repo_system_dir/udev/99-yudots-micmute-led.rules"
+        return 1
+    fi
 }
 
 check_supported_system() {
@@ -383,6 +389,7 @@ install_required_packages() {
         noto-fonts-cjk
         noto-fonts-emoji
         noto-fonts-extra
+        adw-gtk-theme
         breeze-icons
         breeze-gtk
         qt6ct-kde
@@ -404,6 +411,34 @@ install_required_packages() {
     install_package_group "apps" "${app_packages[@]}" || return 1
     install_package_group "fonts and themes" "${font_and_theme_packages[@]}" || return 1
     install_package_group "network" "${network_packages[@]}"
+}
+
+ensure_video_group_membership() {
+    if ! getent group video >/dev/null 2>&1; then
+        warn "group 'video' was not found; skipping brightness permission setup"
+        return 0
+    fi
+
+    if id -nG "$target_user" | grep -qw "video"; then
+        info "user $target_user is already in the video group"
+        return 0
+    fi
+
+    run_cmd sudo usermod -aG video "$target_user" || return 1
+    info "added $target_user to video group (effective after relogin/reboot)"
+}
+
+install_micmute_led_rule() {
+    local target_rule="/etc/udev/rules.d/99-yudots-micmute-led.rules"
+
+    run_cmd sudo install -Dm644 "$repo_system_dir/udev/99-yudots-micmute-led.rules" "$target_rule" || return 1
+
+    if command -v udevadm >/dev/null 2>&1; then
+        run_cmd sudo udevadm control --reload || return 1
+        run_cmd sudo udevadm trigger --subsystem-match=leds || return 1
+    else
+        warn "udevadm was not found; reload the udev rules manually after install"
+    fi
 }
 
 find_service_name() {
@@ -780,6 +815,8 @@ main() {
     run_step "installing bootstrap packages for building paru" bootstrap_build_tools || exit 1
     run_step "installing paru from source" install_paru_from_source || exit 1
     run_step "installing the required packages" install_required_packages || exit 1
+    run_step "ensuring brightness permissions (video group membership)" ensure_video_group_membership || exit 1
+    run_step "installing the microphone LED permission rule" install_micmute_led_rule || exit 1
     run_step "enabling the core openrc services" enable_core_services || exit 1
     run_step "copying the yudots config into place" copy_dotfiles || exit 1
     run_step "copying the bundled wallpapers" copy_wallpapers || exit 1

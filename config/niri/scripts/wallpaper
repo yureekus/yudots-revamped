@@ -5,7 +5,7 @@ set -euo pipefail
 wallpaper="$(
     zenity --file-selection \
         --title="wallpaper" \
-        --filename="${HOME}/Pictures/" \
+        --filename="${HOME}/" \
         --file-filter="Images | *.png *.jpg *.jpeg *.webp *.bmp *.gif"
 )"
 
