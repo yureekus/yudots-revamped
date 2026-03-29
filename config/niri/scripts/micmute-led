@@ -1,0 +1,110 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+led_root="/sys/class/leds"
+default_source="@DEFAULT_SOURCE@"
+
+find_led_paths() {
+    local path="" name=""
+
+    if [[ -n "${MICMUTE_LED_PATHS:-}" ]]; then
+        while IFS= read -r path; do
+            [[ -n "$path" && -e "$path" ]] && printf '%s\n' "$path"
+        done < <(tr ':' '\n' <<<"$MICMUTE_LED_PATHS")
+        return 0
+    fi
+
+    [[ -d "$led_root" ]] || return 0
+
+    for path in "$led_root"/*/brightness; do
+        [[ -e "$path" ]] || continue
+        name=${path#"$led_root"/}
+        name=${name%/brightness}
+
+        case "${name,,}" in
+            *mic*mute*|*mute*mic*|*microphone*mute*|*mute*microphone*|*mic*privacy*|*privacy*mic*)
+                printf '%s\n' "$path"
+                ;;
+        esac
+    done
+}
+
+current_mute_state() {
+    pactl get-source-mute "$default_source" 2>/dev/null | awk '{print $2}'
+}
+
+apply_led_state() {
+    local state="${1:-}"
+    local brightness=0
+
+    case "$state" in
+        yes)
+            brightness=1
+            ;;
+        no)
+            brightness=0
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+
+    while IFS= read -r led_path; do
+        printf '%s' "$brightness" > "$led_path" 2>/dev/null || true
+    done < <(find_led_paths)
+}
+
+sync_led() {
+    local state
+    state=$(current_mute_state) || return 0
+    apply_led_state "$state"
+}
+
+toggle_mic() {
+    wpctl set-mute @DEFAULT_AUDIO_SOURCE@ toggle
+    sync_led
+}
+
+watch_led() {
+    sync_led
+
+    pactl subscribe 2>/dev/null | while IFS= read -r _; do
+        sync_led
+    done
+}
+
+usage() {
+    cat <<'EOF'
+Usage: micmute-led {sync|toggle|watch}
+
+  sync    Update any detected microphone mute LED to match the current mute state
+  toggle  Toggle microphone mute, then sync the LED
+  watch   Keep the LED synced for the current session
+
+Environment:
+  MICMUTE_LED_PATHS   Colon-separated brightness paths to use instead of autodetection
+EOF
+}
+
+main() {
+    local action="${1:-watch}"
+
+    case "$action" in
+        sync)
+            sync_led
+            ;;
+        toggle)
+            toggle_mic
+            ;;
+        watch)
+            watch_led
+            ;;
+        *)
+            usage >&2
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

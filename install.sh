@@ -376,6 +376,7 @@ install_required_packages() {
     local -a font_and_theme_packages=(
         ttf-firacode-nerd
         otf-commit-mono-nerd
+        adw-gtk-theme
         breeze-icons
         breeze-gtk
         qt6ct-kde
@@ -397,6 +398,21 @@ install_required_packages() {
     install_package_group "apps" "${app_packages[@]}" || return 1
     install_package_group "fonts and themes" "${font_and_theme_packages[@]}" || return 1
     install_package_group "network" "${network_packages[@]}"
+}
+
+ensure_video_group_membership() {
+    if ! getent group video >/dev/null 2>&1; then
+        warn "group 'video' was not found; skipping brightness permission setup"
+        return 0
+    fi
+
+    if id -nG "$target_user" | grep -qw "video"; then
+        info "user $target_user is already in the video group"
+        return 0
+    fi
+
+    run_cmd sudo usermod -aG video "$target_user" || return 1
+    info "added $target_user to video group (effective after relogin/reboot)"
 }
 
 find_service_name() {
@@ -773,6 +789,7 @@ main() {
     run_step "installing bootstrap packages for building paru" bootstrap_build_tools || exit 1
     run_step "installing paru from source" install_paru_from_source || exit 1
     run_step "installing the required packages" install_required_packages || exit 1
+    run_step "ensuring brightness permissions (video group membership)" ensure_video_group_membership || exit 1
     run_step "enabling the core openrc services" enable_core_services || exit 1
     run_step "copying the yudots config into place" copy_dotfiles || exit 1
     run_step "copying the bundled wallpapers" copy_wallpapers || exit 1
