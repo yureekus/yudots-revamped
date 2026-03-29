@@ -13,6 +13,17 @@ usage() {
     echo "  $0 reapply"
 }
 
+apply_gtk_defaults() {
+    if ! command -v gsettings >/dev/null 2>&1; then
+        return 0
+    fi
+
+    gsettings set org.gnome.desktop.interface color-scheme prefer-dark >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface font-name "FiraCode Nerd Font 11" >/dev/null 2>&1 || true
+    gsettings set org.gnome.desktop.interface monospace-font-name "FiraCode Nerd Font Mono 11" >/dev/null 2>&1 || true
+}
+
 apply_theme() {
     local image="$1"
 
@@ -32,6 +43,8 @@ set_wallpaper() {
 }
 
 reapply() {
+    apply_gtk_defaults
+
     if [[ ! -f "$state_file" ]]; then
         exit 0
     fi

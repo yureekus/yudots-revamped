@@ -348,6 +348,8 @@ install_required_packages() {
         elogind
         elogind-openrc
         seatd
+        power-profiles-daemon
+        power-profiles-daemon-openrc
         niri
         xorg-xwayland
         xwayland-satellite
@@ -511,6 +513,7 @@ enable_core_services() {
     local dbus_service=""
     local elogind_service=""
     local bluetooth_service=""
+    local power_profiles_service=""
 
     dbus_service="$(find_service_name dbus)" || {
         error "could not find the openrc service for dbus"
@@ -524,6 +527,12 @@ enable_core_services() {
 
     enable_service_in_default "$dbus_service" || return 1
     enable_service_in_default "$elogind_service" || return 1
+
+    if power_profiles_service="$(find_service_name power-profiles-daemon)"; then
+        enable_service_in_default "$power_profiles_service" || return 1
+    else
+        warn "power-profiles-daemon openrc service was not found, skipping it"
+    fi
 
     if bluetooth_service="$(find_service_name bluetoothd)"; then
         enable_service_in_default "$bluetooth_service" || return 1

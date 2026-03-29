@@ -27,11 +27,12 @@ post_hook = 'makoctl reload'
 [templates.gtk3]
 input_path = '~/.config/matugen/templates/gtk3.css'
 output_path = '~/.config/gtk-3.0/colors.css'
-post_hook = 'gsettings set org.gnome.desktop.interface color-scheme prefer-dark; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark'
+post_hook = 'gsettings set org.gnome.desktop.interface color-scheme prefer-dark; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark; gsettings set org.gnome.desktop.interface font-name "FiraCode Nerd Font 11"; gsettings set org.gnome.desktop.interface monospace-font-name "FiraCode Nerd Font Mono 11"'
 
 [templates.gtk4]
 input_path = '~/.config/matugen/templates/gtk4.css'
 output_path = '~/.config/gtk-4.0/colors.css'
+post_hook = 'gsettings set org.gnome.desktop.interface color-scheme prefer-dark; gsettings set org.gnome.desktop.interface gtk-theme adw-gtk3-dark; gsettings set org.gnome.desktop.interface font-name "FiraCode Nerd Font 11"; gsettings set org.gnome.desktop.interface monospace-font-name "FiraCode Nerd Font Mono 11"'
 
 [templates.qt5ct]
 input_path = '~/.config/matugen/templates/qt5ct.conf'
