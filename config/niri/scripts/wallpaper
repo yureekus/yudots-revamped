@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+wallpaper="$(
+    zenity --file-selection \
+        --title="wallpaper" \
+        --filename="${HOME}/Pictures/" \
+        --file-filter="Images | *.png *.jpg *.jpeg *.webp *.bmp *.gif"
+)"
+
+if [[ -z "${wallpaper:-}" ]]; then
+    exit 0
+fi
+
+"$HOME/.config/niri/scripts/themectl" set "$wallpaper"

@@ -1,0 +1,7 @@
+// ASUS
+output "DP-3" {
+    mode "2560x1440@165.000"
+    scale 1.0 // not needed but ill leave it
+    variable-refresh-rate // idk what this exactly does, but whatever
+    focus-at-startup
+}

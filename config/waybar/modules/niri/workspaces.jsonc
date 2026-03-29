@@ -1,0 +1,14 @@
+{
+	"niri/workspaces": {
+		"all-outputs": true,
+		"format": "{icon}",
+		"tooltip": false,
+		"format-icons": {
+			"focused": "",
+			"active": "",
+			"default": "",
+			"empty": ""
+		},
+		"cursor": true
+	}
+}

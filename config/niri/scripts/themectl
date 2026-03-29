@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+# Applies wallpaper-driven theming via Matugen-managed template hooks.
+state_dir="${XDG_STATE_HOME:-$HOME/.local/state}/matugen"
+state_file="$state_dir/current_wallpaper"
+skip_theme_reapply_once="$state_dir/skip_theme_reapply_once"
+
+usage() {
+    echo "Usage:"
+    echo "  $0 set <image> [additional swww img args...]"
+    echo "  $0 reapply"
+}
+
+apply_theme() {
+    local image="$1"
+
+    matugen image "$image" --source-color-index 0
+}
+
+set_wallpaper() {
+    local image="$1"
+    shift
+
+    mkdir -p "$state_dir"
+    printf '%s\n' "$image" > "$state_file"
+    rm -f "$skip_theme_reapply_once"
+
+    swww img "$image" --transition-type none "$@"
+    apply_theme "$image"
+}
+
+reapply() {
+    if [[ ! -f "$state_file" ]]; then
+        exit 0
+    fi
+
+    local image
+    image="$(<"$state_file")"
+
+    if [[ ! -f "$image" ]]; then
+        echo "Saved wallpaper not found: $image" >&2
+        exit 1
+    fi
+
+    if [[ -f "$skip_theme_reapply_once" ]]; then
+        rm -f "$skip_theme_reapply_once"
+        swww img "$image" --transition-type none
+        exit 0
+    fi
+
+    swww img "$image" --transition-type none
+    apply_theme "$image"
+}
+
+if ! command -v swww >/dev/null 2>&1; then
+    echo "Missing required command: swww" >&2
+    exit 1
+fi
+
+if ! command -v matugen >/dev/null 2>&1; then
+    echo "Missing required command: matugen" >&2
+    exit 1
+fi
+
+case "${1:-}" in
+    set)
+        if [[ $# -lt 2 ]]; then
+            usage >&2
+            exit 1
+        fi
+        shift
+        set_wallpaper "$@"
+        ;;
+    reapply)
+        reapply
+        ;;
+    *)
+        usage >&2
+        exit 1
+        ;;
+esac

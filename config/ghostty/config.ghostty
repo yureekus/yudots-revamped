@@ -1,0 +1,3 @@
+theme = "Matugen"
+command = /usr/bin/fish --login --interactive
+confirm-close-surface = false

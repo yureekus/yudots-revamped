@@ -1,0 +1,121 @@
+#!/usr/bin/env bash
+#
+# Launch a power menu
+#
+# Requires fzf, niri, OpenRC/elogind-compatible power commands
+#
+# Author:  Jesse Mirabel <sejjymvm@gmail.com>
+# Date:    August 19, 2025
+# License: MIT
+
+have() {
+	command -v "$1" >/dev/null 2>&1
+}
+
+fzf_ghostty() {
+	env -u FZF_DEFAULT_OPTS -u FZF_DEFAULT_OPTS_FILE \
+		fzf \
+			--color='fg:-1,bg:-1,list-fg:-1,list-bg:-1,gutter:-1,separator:bright-black,scrollbar:bright-black' \
+			--color='bg+:-1,fg+:green,hl:green,hl+:green' \
+			--color='border:green,label:green,info:bright-black,header:bright-black' \
+			--color='prompt:green,pointer:green,marker:green,spinner:green,query:-1,ghost:bright-black' \
+			"$@"
+}
+
+run_first() {
+	local cmd
+	for cmd in "$@"; do
+		if eval "$cmd"; then
+			return 0
+		fi
+	done
+
+	return 1
+}
+
+main() {
+	local list=(
+		"Lock"
+		"Shutdown"
+		"Reboot"
+		"Logout"
+		"Hibernate"
+		"Suspend"
+	)
+
+	local options=(
+		"--border=sharp"
+		"--border-label= Power Menu "
+		"--cycle"
+		"--ghost=Search"
+		"--gutter= "
+		"--height=~100%"
+		"--highlight-line"
+		"--info=inline-right"
+		"--pointer=>"
+		"--reverse"
+	)
+
+	local selected
+	selected=$(printf "%s\n" "${list[@]}" | fzf_ghostty "${options[@]}")
+
+	case $selected in
+		Lock)      lock_session ;;
+		Shutdown)  shutdown_system ;;
+		Reboot)    reboot_system ;;
+		Logout)    logout_session ;;
+		Hibernate) hibernate_system ;;
+		Suspend)   suspend_system ;;
+		*)         return 1 ;;
+	esac
+}
+
+lock_session() {
+	if have loginctl; then
+		if [[ -n ${XDG_SESSION_ID:-} ]]; then
+			loginctl lock-session "$XDG_SESSION_ID"
+		else
+			loginctl lock-session
+		fi
+	fi
+}
+
+shutdown_system() {
+	run_first \
+		'openrc-shutdown -p now' \
+		'loginctl poweroff' \
+		'poweroff'
+}
+
+reboot_system() {
+	run_first \
+		'openrc-shutdown -r now' \
+		'loginctl reboot' \
+		'reboot'
+}
+
+logout_session() {
+	if command -v niri >/dev/null 2>&1 && [[ -n ${NIRI_SOCKET:-} ]]; then
+		niri msg action quit
+		return
+	fi
+
+	if [[ -n ${XDG_SESSION_ID:-} ]]; then
+		loginctl terminate-session "$XDG_SESSION_ID"
+		return
+	fi
+
+	pkill -KILL -u "$USER"
+}
+
+hibernate_system() {
+	run_first \
+		'loginctl hibernate'
+}
+
+suspend_system() {
+	run_first \
+		'loginctl suspend'
+}
+
+main

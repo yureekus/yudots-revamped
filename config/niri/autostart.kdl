@@ -1,0 +1,8 @@
+// penis osla
+spawn-at-startup "pipewire"
+spawn-at-startup "wireplumber"
+spawn-at-startup "pipewire-pulse"
+spawn-sh-at-startup "sleep 1 && waybar"
+spawn-sh-at-startup "sleep 1 && mako"
+spawn-sh-at-startup "sleep 1 && swww-daemon"
+spawn-sh-at-startup "sleep 1 && ~/.config/niri/scripts/themectl reapply"
