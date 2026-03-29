@@ -759,6 +759,7 @@ finish_message() {
     ok "install finished"
     warn "you should now relogin or reboot"
     warn "rebooting is the better option here"
+    warn "join @haxiPorts to report a problem or something"
 }
 
 main() {
