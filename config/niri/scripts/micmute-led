@@ -31,6 +31,17 @@ find_led_paths() {
 }
 
 current_mute_state() {
+    local wpctl_output=""
+
+    if wpctl_output=$(wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null); then
+        if [[ "$wpctl_output" == *"[MUTED]"* ]]; then
+            printf '%s\n' yes
+        else
+            printf '%s\n' no
+        fi
+        return 0
+    fi
+
     pactl get-source-mute "$default_source" 2>/dev/null | awk '{print $2}'
 }
 
@@ -51,7 +62,8 @@ apply_led_state() {
     esac
 
     while IFS= read -r led_path; do
-        printf '%s' "$brightness" > "$led_path" 2>/dev/null || true
+        # Use tee so write failures are redirectable and do not spam stderr.
+        printf '%s' "$brightness" | tee "$led_path" >/dev/null 2>&1 || true
     done < <(find_led_paths)
 }
 
