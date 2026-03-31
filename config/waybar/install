@@ -43,12 +43,9 @@ install_deps() {
 restart_waybar() {
 	printf "\n%bRestarting Waybar...%b\n" "$blue" "$reset"
 
-	if ! (systemctl --user is-enabled waybar.service &&
-		systemctl --user restart waybar.service) &> /dev/null; then
-		pkill waybar
-		~/.config/waybar/scripts/run &> /dev/null &
-		disown
-	fi
+	pkill waybar
+	~/.config/waybar/scripts/run &> /dev/null &
+	disown
 }
 
 main() {
