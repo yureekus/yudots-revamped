@@ -9,9 +9,7 @@
 		// "~/.config/waybar/modules/extras/*.jsonc"
 	],
 
-	/*------------
-	    Layout
-	------------*/
+	// Layout
 
 	"modules-left": [
 		"custom/user",
@@ -52,13 +50,13 @@
 		"backlight",
 		"custom/left_div#8",
 		"battery",
+		"custom/left_div#9",
+		"custom/mode",
 		"custom/left_inv#2",
 		"custom/power"
 	],
 
-	/*-------------
-	    Options
-	-------------*/
+	// Options
 
 	// "expand-center":
 	// "expand-left":

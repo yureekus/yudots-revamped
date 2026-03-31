@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 
-FG_RED="\e[31m"
-FG_GREEN="\e[32m"
-FG_BLUE="\e[34m"
-FG_RESET="\e[39m"
+red="\e[31m"
+green="\e[32m"
+blue="\e[34m"
+reset="\e[39m"
 
-ERRORS=0
+errors=0
 
-DEPS=(
+deps=(
 	bluez-utils # bluetoothctl
 	brightnessctl
 	fzf
@@ -21,32 +21,32 @@ printf() {
 }
 
 install_deps() {
-	printf "%bInstalling dependencies...%b\n" "$FG_BLUE" "$FG_RESET"
+	printf "%bInstalling deps...%b\n" "$blue" "$reset"
 
 	local dep
-	for dep in "${DEPS[@]}"; do
+	for dep in "${deps[@]}"; do
 		if pacman -Qi "$dep" &> /dev/null; then
 			printf "[=] %s\n" "$dep"
 		else
 			printf "[ ] %s...\n" "$dep"
 
 			if sudo pacman -S --noconfirm "$dep"; then
-				printf "[%b+%b] %s\n" "$FG_GREEN" "$FG_RESET" "$dep"
+				printf "[%b+%b] %s\n" "$green" "$reset" "$dep"
 			else
-				printf "[%bx%b] %s\n" "$FG_RED" "$FG_RESET" "$dep"
-				((ERRORS += 1))
+				printf "[%bx%b] %s\n" "$red" "$reset" "$dep"
+				((errors += 1))
 			fi
 		fi
 	done
 }
 
 restart_waybar() {
-	printf "\n%bRestarting Waybar...%b\n" "$FG_BLUE" "$FG_RESET"
+	printf "\n%bRestarting Waybar...%b\n" "$blue" "$reset"
 
 	if ! (systemctl --user is-enabled waybar.service &&
 		systemctl --user restart waybar.service) &> /dev/null; then
 		pkill waybar
-		waybar &> /dev/null &
+		~/.config/waybar/scripts/run &> /dev/null &
 		disown
 	fi
 }
@@ -55,11 +55,11 @@ main() {
 	install_deps
 	restart_waybar
 
-	if ((ERRORS > 0)); then
-		printf "\nInstallation completed with %b%d error(s)%b\n" \
-			"$FG_RED" "$ERRORS" "$FG_RESET"
+	if ((errors > 0)); then
+		printf "\nFinished with %b%d error(s)%b\n" \
+			"$red" "$errors" "$reset"
 	else
-		printf "\n%bInstallation complete!%b\n" "$FG_GREEN" "$FG_RESET"
+		printf "\n%bDone%b\n" "$green" "$reset"
 	fi
 }
 

@@ -5,7 +5,7 @@
 		// "exec-on-event":
 		// "hide-empty-text":
 		"return-type": "json",
-		"interval": 3600,
+		"interval": 21600,
 		// "restart-interval":
 		"signal": 1,
 		"format": "{}",

@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+
+set -u
+
+service="net.hadess.PowerProfiles"
+object_path="/net/hadess/PowerProfiles"
+interface="net.hadess.PowerProfiles"
+property="ActiveProfile"
+signal="2"
+
+get_profile() {
+	if command -v busctl > /dev/null; then
+		busctl get-property --system "$service" "$object_path" "$interface" "$property" 2> /dev/null |
+			sed -E 's/^s "(.*)"$/\1/'
+		return
+	fi
+
+	gdbus call --system \
+		--dest "$service" \
+		--object-path "$object_path" \
+		--method org.freedesktop.DBus.Properties.Get \
+		"$interface" \
+		"$property" 2> /dev/null |
+		sed -E "s/^\(<'(.*)'>,\)$/\1/"
+}
+
+set_profile() {
+	local profile=$1
+
+	if command -v busctl > /dev/null; then
+		busctl set-property --system "$service" "$object_path" "$interface" "$property" s "$profile"
+		return
+	fi
+
+	gdbus call --system \
+		--dest "$service" \
+		--object-path "$object_path" \
+		--method org.freedesktop.DBus.Properties.Set \
+		"$interface" \
+		"$property" \
+		"<'$profile'>" > /dev/null
+}
+
+profile_meta() {
+	case $1 in
+		power-saver)
+			printf '%s\n%s\n%s\n' "󰁹" "Saver" "power-saver"
+			;;
+		balanced)
+			printf '%s\n%s\n%s\n' "󰗑" "Balanced" "balanced"
+			;;
+		performance)
+			printf '%s\n%s\n%s\n' "󰓅" "Performance" "performance"
+			;;
+		*)
+			printf '%s\n%s\n%s\n' "󰧑" "Unknown" "unknown"
+			;;
+	esac
+}
+
+cycle_profile() {
+	local current
+	current=$(get_profile)
+
+	case $current in
+		power-saver)
+			set_profile "balanced"
+			;;
+		balanced)
+			set_profile "performance"
+			;;
+		performance)
+			set_profile "power-saver"
+			;;
+		*)
+			set_profile "balanced"
+			;;
+	esac
+
+	pkill -RTMIN+"$signal" waybar 2> /dev/null || true
+}
+
+print_module() {
+	local profile icon label class tooltip
+	profile=$(get_profile)
+
+	if [[ -z $profile ]]; then
+		printf '{ "text": "󰧑", "tooltip": "Power mode unavailable", "class": "unknown" }\n'
+		return
+	fi
+
+	mapfile -t meta < <(profile_meta "$profile")
+	icon=${meta[0]}
+	label=${meta[1]}
+	class=${meta[2]}
+	tooltip="Mode: $label"
+
+	printf '{ "text": "%s", "tooltip": "%s", "class": "%s" }\n' "$icon" "$tooltip" "$class"
+}
+
+case ${1:-module} in
+	module)
+		print_module
+		;;
+	toggle)
+		cycle_profile
+		;;
+	*)
+		printf 'usage: %s [module|toggle]\n' "$0" >&2
+		exit 1
+		;;
+esac

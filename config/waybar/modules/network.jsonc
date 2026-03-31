@@ -2,7 +2,7 @@
 	"network": {
 		// "interface":
 		// "rfkill":
-		"interval": 10,
+		"interval": 30,
 		// "family":
 		"format": "󰤨",
 		"format-ethernet": "󰈀",

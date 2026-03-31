@@ -1,10 +1,10 @@
-// penis osla
+// Startup
 spawn-at-startup "pipewire"
 spawn-at-startup "wireplumber"
 spawn-at-startup "pipewire-pulse"
 spawn-sh-at-startup "sleep 2 && ~/.config/niri/scripts/micmute-led watch"
-spawn-sh-at-startup "sleep 1 && waybar"
+spawn-sh-at-startup "sleep 1 && ~/.config/waybar/scripts/run"
 spawn-sh-at-startup "sleep 1 && mako"
 spawn-sh-at-startup "sleep 1 && swww-daemon"
 spawn-sh-at-startup "sleep 1 && ~/.config/niri/scripts/themectl reapply"
-spawn-sh-at-startup "sleep 1 && swayidle -w timeout 300 '~/.config/niri/scripts/lock' lock '~/.config/niri/scripts/lock' before-sleep '~/.config/niri/scripts/lock'"
+spawn-sh-at-startup "sleep 1 && swayidle -w timeout 240 '~/.config/niri/scripts/lock' timeout 300 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' lock '~/.config/niri/scripts/lock' before-sleep '~/.config/niri/scripts/lock'"

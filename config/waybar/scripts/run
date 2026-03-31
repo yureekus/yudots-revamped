@@ -1,0 +1,30 @@
+#!/usr/bin/env bash
+
+set -u
+
+running=true
+log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/waybar"
+log_file="$log_dir/restarts.log"
+
+mkdir -p "$log_dir"
+
+stop() {
+	running=false
+	pkill -x waybar 2> /dev/null || true
+}
+
+trap stop INT TERM
+
+while $running; do
+	waybar
+	status=$?
+
+	if ! $running; then
+		break
+	fi
+
+	printf '%s waybar exited with status %s, restarting in 1s\n' \
+		"$(date '+%Y-%m-%d %H:%M:%S')" \
+		"$status" >> "$log_file"
+	sleep 1
+done
