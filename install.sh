@@ -263,6 +263,11 @@ check_repo_layout() {
         error "missing udev rule: $repo_system_dir/udev/99-yudots-micmute-led.rules"
         return 1
     fi
+
+    if [[ ! -f "$repo_system_dir/elogind/logind.conf.d/90-yudots-lid-lock.conf" ]]; then
+        error "missing elogind config: $repo_system_dir/elogind/logind.conf.d/90-yudots-lid-lock.conf"
+        return 1
+    fi
 }
 
 check_supported_system() {
@@ -357,6 +362,7 @@ install_required_packages() {
         waybar
         fuzzel
         mako
+        swayidle
         swww
         zenity
     )
@@ -376,6 +382,7 @@ install_required_packages() {
         fish
         starship
         matugen-bin
+        swaylock-effects
         brightnessctl
         fzf
         pacman-contrib
@@ -440,6 +447,20 @@ install_micmute_led_rule() {
         run_cmd sudo udevadm trigger --subsystem-match=leds || return 1
     else
         warn "udevadm was not found; reload the udev rules manually after install"
+    fi
+}
+
+install_elogind_lid_lock_config() {
+    local target_conf_dir="/etc/elogind/logind.conf.d"
+    local target_conf="$target_conf_dir/90-yudots-lid-lock.conf"
+
+    run_cmd sudo install -d "$target_conf_dir" || return 1
+    run_cmd sudo install -Dm644 "$repo_system_dir/elogind/logind.conf.d/90-yudots-lid-lock.conf" "$target_conf" || return 1
+
+    if command -v loginctl >/dev/null 2>&1; then
+        run_cmd sudo loginctl reload || return 1
+    else
+        warn "loginctl was not found; reload elogind manually after install"
     fi
 }
 
@@ -826,6 +847,7 @@ main() {
     run_step "installing the required packages" install_required_packages || exit 1
     run_step "ensuring brightness permissions (video group membership)" ensure_video_group_membership || exit 1
     run_step "installing the microphone LED permission rule" install_micmute_led_rule || exit 1
+    run_step "installing the elogind lid-close lock configuration" install_elogind_lid_lock_config || exit 1
     run_step "enabling the core openrc services" enable_core_services || exit 1
     run_step "copying the yudots config into place" copy_dotfiles || exit 1
     run_step "copying the bundled wallpapers" copy_wallpapers || exit 1

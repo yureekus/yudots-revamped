@@ -24,6 +24,10 @@ input_path = '~/.config/matugen/templates/mako'
 output_path = '~/.config/mako/mako-colors'
 post_hook = 'makoctl reload'
 
+[templates.swaylock]
+input_path = '~/.config/matugen/templates/swaylock'
+output_path = '~/.config/swaylock/config'
+
 [templates.gtk3]
 input_path = '~/.config/matugen/templates/gtk3.css'
 output_path = '~/.config/gtk-3.0/colors.css'

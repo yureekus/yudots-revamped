@@ -95,8 +95,8 @@ reboot_system() {
 }
 
 logout_session() {
-	if command -v niri >/dev/null 2>&1 && [[ -n ${NIRI_SOCKET:-} ]]; then
-		niri msg action quit
+	if command -v niri >/dev/null 2>&1 && pgrep -x niri >/dev/null 2>&1; then
+		pkill -x niri
 		return
 	fi
 

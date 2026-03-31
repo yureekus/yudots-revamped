@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+config_dir="${XDG_CONFIG_HOME:-$HOME/.config}"
+lock_config="$config_dir/swaylock/config"
+
+if pgrep -x swaylock >/dev/null 2>&1; then
+    exit 0
+fi
+
+exec swaylock \
+    --daemonize \
+    --config "$lock_config" \
+    --screenshots \
+    --effect-blur 7x5
