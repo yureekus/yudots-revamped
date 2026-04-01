@@ -783,10 +783,12 @@ copy_wallpapers() {
     run_cmd cp -a "$repo_wallpapers_dir" "$data_root/"
 }
 
-seed_default_wallpaper() {
+prepare_wallpaper_and_theme_state() {
     local state_dir="$target_home/.local/state/matugen"
+    local state_file="$state_dir/current_wallpaper"
     local default_wallpaper_path="$target_home/.local/share/yudots-revamped/wallpapers/$default_wallpaper_name"
     local skip_marker="$state_dir/skip_theme_reapply_once"
+    local current_wallpaper=""
 
     if [[ ! -f "$default_wallpaper_path" ]]; then
         error "default wallpaper was not copied to $default_wallpaper_path"
@@ -794,7 +796,20 @@ seed_default_wallpaper() {
     fi
 
     mkdir -p "$state_dir" || return 1
-    printf '%s\n' "$default_wallpaper_path" > "$state_dir/current_wallpaper" || return 1
+
+    if [[ -f "$state_file" ]]; then
+        current_wallpaper="$(<"$state_file")"
+    fi
+
+    if [[ -n "$current_wallpaper" && -f "$current_wallpaper" ]]; then
+        rm -f -- "$skip_marker" || return 1
+        run_cmd matugen image "$current_wallpaper" --source-color-index 0 || return 1
+        info "kept existing wallpaper state: $current_wallpaper"
+        info "regenerated the color scheme from the existing wallpaper"
+        return 0
+    fi
+
+    printf '%s\n' "$default_wallpaper_path" > "$state_file" || return 1
     : > "$skip_marker" || return 1
 
     info "default wallpaper seeded as $default_wallpaper_path"
@@ -840,7 +855,7 @@ main() {
     run_step "enabling the core openrc services" enable_core_services || exit 1
     run_step "copying the yudots config into place" copy_dotfiles || exit 1
     run_step "copying the bundled wallpapers" copy_wallpapers || exit 1
-    run_step "seeding the default wallpaper and theme state" seed_default_wallpaper || exit 1
+    run_step "preparing wallpaper and theme state" prepare_wallpaper_and_theme_state || exit 1
     run_step "making sure the default shell is bash" ensure_bash_login_shell || exit 1
     run_step "switching from connman to networkmanager when needed" handle_network_stack || exit 1
     finish_message

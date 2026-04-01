@@ -15,13 +15,13 @@ indicator-radius=110
 indicator-thickness=12
 
 inside-color=#171217dd
-inside-clear-color=#2e282ddd
+inside-clear-color=#613767dd
 inside-caps-lock-color=#524153dd
 inside-ver-color=#613767dd
 inside-wrong-color=#93000add
 
 ring-color=#eab5ee
-ring-clear-color=#998d96
+ring-clear-color=#eab5ee
 ring-caps-lock-color=#d7bfd5
 ring-ver-color=#eab5ee
 ring-wrong-color=#ffb4ab
@@ -35,7 +35,7 @@ caps-lock-key-hl-color=#d7bfd5
 caps-lock-bs-hl-color=#ffb4ab
 
 text-color=#eadfe6
-text-clear-color=#eadfe6
+text-clear-color=#fed6ff
 text-caps-lock-color=#f4dbf2
 text-ver-color=#fed6ff
 text-wrong-color=#ffdad6

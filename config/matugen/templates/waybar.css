@@ -61,6 +61,7 @@
 @define-color volume @md_surface_container;
 @define-color backlight @md_surface_container_high;
 @define-color battery @md_surface_container_highest;
+@define-color mode @md_secondary_container;
 
 @define-color warning @md_tertiary;
 @define-color critical @md_error;
