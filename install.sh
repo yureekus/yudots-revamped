@@ -12,7 +12,6 @@ log_file="/tmp/yudots-revamped-install-$(date +%Y%m%d-%H%M%S).log"
 target_user="${USER:-}"
 target_home="${HOME:-}"
 paru_build_dir=""
-backup_root=""
 networkmanager_service=""
 connman_service=""
 
@@ -722,25 +721,15 @@ handle_network_stack() {
     fi
 }
 
-ensure_backup_root() {
-    if [[ -n "$backup_root" ]]; then
-        return 0
-    fi
-
-    backup_root="$target_home/.local/state/yudots-revamped-backups/$(date +%Y%m%d-%H%M%S)"
-    mkdir -p "$backup_root"
-}
-
-backup_existing_path() {
+remove_existing_path() {
     local target_path="$1"
 
     if [[ ! -e "$target_path" && ! -L "$target_path" ]]; then
         return 0
     fi
 
-    ensure_backup_root || return 1
-    info "backing up $target_path to $backup_root"
-    mv "$target_path" "$backup_root/" || return 1
+    info "removing existing $target_path"
+    run_cmd rm -rf -- "$target_path" || return 1
 }
 
 copy_dotfiles() {
@@ -751,7 +740,7 @@ copy_dotfiles() {
 
     while true; do
         warning_result=0
-        pause_on_warning "existing matching config directories and files will be backed up and replaced with the yudots versions." || warning_result=$?
+        pause_on_warning "existing matching config directories and files will be deleted and replaced with the yudots versions." || warning_result=$?
 
         case "$warning_result" in
             0)
@@ -777,11 +766,11 @@ copy_dotfiles() {
         fi
 
         target_path="$target_home/.config/$entry"
-        backup_existing_path "$target_path" || return 1
+        remove_existing_path "$target_path" || return 1
         run_cmd cp -a "$source" "$target_home/.config/" || return 1
     done
 
-    backup_existing_path "$target_home/.bash_profile" || return 1
+    remove_existing_path "$target_home/.bash_profile" || return 1
     run_cmd cp -a "$repo_config_dir/bash_profile" "$target_home/.bash_profile"
 }
 
@@ -789,7 +778,7 @@ copy_wallpapers() {
     local data_root="$target_home/.local/share/yudots-revamped"
 
     mkdir -p "$target_home/.local/share" || return 1
-    backup_existing_path "$data_root" || return 1
+    remove_existing_path "$data_root" || return 1
     mkdir -p "$data_root" || return 1
     run_cmd cp -a "$repo_wallpapers_dir" "$data_root/"
 }

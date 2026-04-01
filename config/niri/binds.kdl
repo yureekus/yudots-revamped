@@ -277,3 +277,5 @@ binds {
     Mod+Return { spawn "ghostty"; }
     Mod+W hotkey-overlay-title="Pick a Wallpaper" { spawn "~/.config/niri/scripts/wallpaper"; }
 }
+
+include "custom/binds.kdl"

@@ -32,3 +32,5 @@ input {
         // middle-emulation
     //}
 }
+
+include "custom/input.kdl"

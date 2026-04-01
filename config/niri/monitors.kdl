@@ -19,3 +19,5 @@ output "eDP-1" {
     variable-refresh-rate
     focus-at-startup
 }
+
+include "custom/monitors.kdl"
