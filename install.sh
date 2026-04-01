@@ -377,6 +377,7 @@ install_required_packages() {
         helium-browser-bin
         vscodium-bin
         flclashx-bin
+        dolphin
         ghostty
         fish
         starship
@@ -599,9 +600,30 @@ record_network_state() {
 
 verify_networkmanager() {
     local attempt=""
+    local daemon_ready=1
+    local running_state=""
 
-    if command -v nmcli >/dev/null 2>&1; then
-        run_cmd nmcli general status || true
+    for attempt in 1 2 3 4 5; do
+        info "networkmanager daemon check attempt $attempt of 5"
+
+        if command -v nmcli >/dev/null 2>&1; then
+            running_state="$(nmcli -t -f RUNNING general 2>/dev/null || true)"
+            if [[ "$running_state" == "running" ]]; then
+                daemon_ready=0
+                run_cmd nmcli general status || true
+                break
+            fi
+        elif pgrep -x NetworkManager >/dev/null 2>&1; then
+            daemon_ready=0
+            break
+        fi
+
+        sleep 2
+    done
+
+    if (( daemon_ready != 0 )); then
+        error "networkmanager did not become ready after being enabled"
+        return 1
     fi
 
     for attempt in 1 2 3 4 5; do
@@ -614,7 +636,9 @@ verify_networkmanager() {
         sleep 2
     done
 
-    return 1
+    warn "networkmanager is running, but internet connectivity is not ready yet"
+    warn "this is expected on some first installs while networkmanager waits for the first connection"
+    return 0
 }
 
 restore_service_runlevels() {
