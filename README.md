@@ -176,6 +176,7 @@ It also installs:
 
 - [end-4](https://github.com/end-4) for the original inspiration
 - [mechabar](https://github.com/sejjy/mechabar) for the Waybar base and ideas
+- [Nawnii](https://t.me/ihazaadhdcuzamafreak) for the awesome art
 
 ## Contributing
 
