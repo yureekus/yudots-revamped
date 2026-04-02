@@ -14,6 +14,7 @@ target_home="${HOME:-}"
 paru_build_dir=""
 networkmanager_service=""
 connman_service=""
+sudo_keepalive_pid=""
 
 declare -a service_runlevels=()
 declare -a connman_enabled_levels=()
@@ -190,6 +191,11 @@ run_step() {
 cleanup() {
     local exit_code=$?
 
+    if [[ -n "$sudo_keepalive_pid" ]] && kill -0 "$sudo_keepalive_pid" >/dev/null 2>&1; then
+        kill "$sudo_keepalive_pid" >/dev/null 2>&1 || true
+        wait "$sudo_keepalive_pid" 2>/dev/null || true
+    fi
+
     if [[ -n "$paru_build_dir" && -d "$paru_build_dir" ]]; then
         rm -rf -- "$paru_build_dir"
     fi
@@ -210,6 +216,21 @@ on_interrupt() {
 
 trap cleanup EXIT
 trap on_interrupt INT TERM
+
+start_sudo_keepalive() {
+    if [[ -n "$sudo_keepalive_pid" ]] && kill -0 "$sudo_keepalive_pid" >/dev/null 2>&1; then
+        return 0
+    fi
+
+    (
+        while true; do
+            sleep 60
+            sudo -n true >/dev/null 2>&1 || exit 0
+        done
+    ) &
+    sudo_keepalive_pid=$!
+    info "started sudo credential keepalive in the background"
+}
 
 check_user_context() {
     if [[ "${EUID}" -eq 0 ]]; then
@@ -233,6 +254,7 @@ check_user_context() {
     fi
 
     run_cmd sudo -v || return 1
+    start_sudo_keepalive || return 1
     info "install target: $target_user"
     info "target home: $target_home"
 }
@@ -820,6 +842,11 @@ copy_dotfiles() {
             continue
         fi
 
+        if [[ "$entry" == "niri" ]]; then
+            copy_niri_dotfiles || return 1
+            continue
+        fi
+
         target_path="$target_home/.config/$entry"
         remove_existing_path "$target_path" || return 1
         run_cmd cp -a "$source" "$target_home/.config/" || return 1
@@ -827,6 +854,30 @@ copy_dotfiles() {
 
     remove_existing_path "$target_home/.bash_profile" || return 1
     run_cmd cp -a "$repo_config_dir/bash_profile" "$target_home/.bash_profile"
+}
+
+copy_niri_dotfiles() {
+    local source_dir="$repo_config_dir/niri"
+    local target_dir="$target_home/.config/niri"
+    local target_custom_dir="$target_dir/custom"
+    local source=""
+    local entry=""
+    local target_path=""
+
+    mkdir -p "$target_dir" || return 1
+
+    for source in "$source_dir"/*; do
+        entry="$(basename "$source")"
+
+        if [[ "$entry" == "custom" && -d "$target_custom_dir" ]]; then
+            info "preserving existing $target_custom_dir"
+            continue
+        fi
+
+        target_path="$target_dir/$entry"
+        remove_existing_path "$target_path" || return 1
+        run_cmd cp -a "$source" "$target_dir/" || return 1
+    done
 }
 
 copy_wallpapers() {
