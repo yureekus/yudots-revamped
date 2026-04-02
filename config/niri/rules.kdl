@@ -33,6 +33,12 @@ window-rule {
     open-floating true
 }
 
+// Put the dedicated swww overview wallpaper inside the overview backdrop.
+layer-rule {
+    match namespace="^swww-daemonoverview$"
+    place-within-backdrop true
+}
+
 // Example: block out two password managers from screen capture.
 // (This example rule is commented out with a "/-" in front.)
 /-window-rule {

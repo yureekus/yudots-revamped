@@ -386,6 +386,7 @@ install_required_packages() {
         mako
         swayidle
         swww
+        ffmpeg
         zenity
     )
 
