@@ -9,6 +9,11 @@ property="ActiveProfile"
 signal="2"
 
 get_profile() {
+	if command -v powerprofilesctl > /dev/null; then
+		powerprofilesctl get 2> /dev/null
+		return
+	fi
+
 	if command -v busctl > /dev/null; then
 		busctl get-property --system "$service" "$object_path" "$interface" "$property" 2> /dev/null |
 			sed -E 's/^s "(.*)"$/\1/'
@@ -27,9 +32,14 @@ get_profile() {
 set_profile() {
 	local profile=$1
 
+	if command -v powerprofilesctl > /dev/null; then
+		powerprofilesctl set "$profile" > /dev/null 2>&1
+		return $?
+	fi
+
 	if command -v busctl > /dev/null; then
 		busctl set-property --system "$service" "$object_path" "$interface" "$property" s "$profile"
-		return
+		return $?
 	fi
 
 	gdbus call --system \
@@ -39,6 +49,8 @@ set_profile() {
 		"$interface" \
 		"$property" \
 		"<'$profile'>" > /dev/null
+
+	return $?
 }
 
 profile_meta() {
@@ -81,21 +93,19 @@ cycle_profile() {
 }
 
 print_module() {
-	local profile icon label class tooltip
+	local profile icon class
 	profile=$(get_profile)
 
 	if [[ -z $profile ]]; then
-		printf '{ "text": "󰧑", "tooltip": "Power mode unavailable", "class": "unknown" }\n'
+		printf '{ "text": "󰧑", "class": "unknown" }\n'
 		return
 	fi
 
 	mapfile -t meta < <(profile_meta "$profile")
 	icon=${meta[0]}
-	label=${meta[1]}
 	class=${meta[2]}
-	tooltip="Mode: $label"
 
-	printf '{ "text": "%s", "tooltip": "%s", "class": "%s" }\n' "$icon" "$tooltip" "$class"
+	printf '{ "text": "%s", "class": "%s" }\n' "$icon" "$class"
 }
 
 case ${1:-module} in

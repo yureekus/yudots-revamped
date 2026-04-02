@@ -6,6 +6,6 @@
 		"signal": 2,
 		"format": "{}",
 		"on-click": "~/.config/waybar/scripts/mode toggle",
-		"tooltip": true
+		"tooltip": false
 	}
 }
