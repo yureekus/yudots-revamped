@@ -7,8 +7,8 @@
 # Date:    August 16, 2025
 # License: MIT
 
-DEFAULT_FLAKE_PATH="${yudots_flake_path:-${YUDOTS_FLAKE_PATH:-/etc/nixos}}"
-DEFAULT_HOST="${yudots_hostname:-${YUDOTS_HOSTNAME:-$(hostname)}}"
+DEFAULT_FLAKE_PATH="${yudots_flake_path:-/etc/nixos}"
+DEFAULT_HOST="${yudots_hostname:-$(hostname)}"
 
 printf() {
 	command printf "$@" >&2
