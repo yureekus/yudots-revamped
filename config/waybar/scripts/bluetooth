@@ -10,7 +10,6 @@
 # License: MIT
 
 TIMEOUT=20
-LOG_FILE="/tmp/yudots-bluetooth.log"
 
 printf() {
 	command printf "$@" >&2
@@ -49,12 +48,7 @@ wait_for_info_field() {
 }
 
 run_bt_commands() {
-	local output
-	output=$(timeout "$TIMEOUT" bash -lc 'printf "%s\n" "$@" | bluetoothctl' bash "$@" 2>&1)
-	local status=$?
-
-	printf "%s\n" "$output" >> "$LOG_FILE"
-	return "$status"
+	timeout "$TIMEOUT" bash -lc 'printf "%s\n" "$@" | bluetoothctl > /dev/null' bash "$@"
 }
 
 power_on() {
@@ -163,7 +157,6 @@ pair_and_connect() {
 	paired=$(bt_info_field "$ADDRESS" "Paired")
 
 	bluetoothctl scan off > /dev/null
-	: > "$LOG_FILE"
 
 	if [[ $paired != yes ]]; then
 		printf "Pairing..."
@@ -175,8 +168,7 @@ pair_and_connect() {
 			"quit"
 
 		if ! wait_for_info_field "$ADDRESS" "Paired" "yes"; then
-			notify-send "Bluetooth" "Failed to pair. See /tmp/yudots-bluetooth.log" \
-				-i "package-purge"
+			notify-send "Bluetooth" "Failed to pair" -i "package-purge"
 			exit 1
 		fi
 	fi
@@ -188,11 +180,8 @@ pair_and_connect() {
 
 	printf "\nConnecting..."
 
-	local connected
 	if ! wait_for_info_field "$ADDRESS" "Connected" "yes"; then
-		connected=$(bt_info_field "$ADDRESS" "Connected")
-		notify-send "Bluetooth" "Failed to connect. See /tmp/yudots-bluetooth.log" \
-			-i "package-purge"
+		notify-send "Bluetooth" "Failed to connect" -i "package-purge"
 		exit 1
 	fi
 
