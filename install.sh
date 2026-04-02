@@ -358,6 +358,7 @@ install_required_packages() {
         xorg-xwayland
         xwayland-satellite
         xdg-desktop-portal-gnome
+        polkit-gnome
         waybar
         fuzzel
         mako
