@@ -2,7 +2,7 @@
 #
 # Launch a power menu
 #
-# Requires fzf, niri, OpenRC/elogind-compatible power commands
+# Requires fzf, niri, and systemd power management commands
 #
 # Author:  Jesse Mirabel <sejjymvm@gmail.com>
 # Date:    August 19, 2025
@@ -82,14 +82,14 @@ lock_session() {
 
 shutdown_system() {
 	run_first \
-		'openrc-shutdown -p now' \
+		'systemctl poweroff' \
 		'loginctl poweroff' \
 		'poweroff'
 }
 
 reboot_system() {
 	run_first \
-		'openrc-shutdown -r now' \
+		'systemctl reboot' \
 		'loginctl reboot' \
 		'reboot'
 }
@@ -110,11 +110,13 @@ logout_session() {
 
 hibernate_system() {
 	run_first \
+		'systemctl hibernate' \
 		'loginctl hibernate'
 }
 
 suspend_system() {
 	run_first \
+		'systemctl suspend' \
 		'loginctl suspend'
 }
 

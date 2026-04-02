@@ -1,1 +1,0 @@
-ACTION=="add|change", SUBSYSTEM=="leds", KERNEL=="platform::micmute", RUN+="/usr/bin/chgrp video /sys%p/brightness", RUN+="/usr/bin/chmod 0664 /sys%p/brightness"

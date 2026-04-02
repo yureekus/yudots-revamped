@@ -83,7 +83,7 @@ Feel free to open a pull request to add new themes! :^)
 	```
 
 	<details>
-	<summary>Dependencies (6)</summary>
+	<summary>Dependencies (5)</summary>
 
 	| Package                | Command         | Description                                                                    |
 	| ---------------------- | --------------- | ------------------------------------------------------------------------------ |
@@ -91,7 +91,6 @@ Feel free to open a pull request to add new themes! :^)
 	| `brightnessctl`        | `brightnessctl` | Lightweight brightness control tool<tr></tr>                                   |
 	| `fzf`                  | `fzf`           | Command-line fuzzy finder<tr></tr>                                             |
 	| `networkmanager`       | `nmcli`         | Network connection manager and user applications<tr></tr>                      |
-	| `pacman-contrib`       | `checkupdates`  | Contributed scripts and tools for pacman systems<tr></tr>                      |
 	| `otf-commit-mono-nerd` | -               | Patched font Commit Mono from nerd fonts library                               |
 
 	</details>
@@ -125,37 +124,29 @@ can configure it to run any command. For example:
 <summary>Binds</summary>
 
 You can define keybinds to interact with modules using their respective
-[scripts](./scripts/). For example:
+[scripts](./scripts/). For example, in Niri:
 
-```properties
-# ~/.config/hypr/hyprland.conf
+```kdl
+// ~/.config/niri/custom/binds.kdl
 
-$scripts = ~/.config/waybar/scripts
-$mod = Super
-$terminal = kitty
+binds {
+	Mod+B { spawn "ghostty" "--class=org.haxi0.waybar-popup" "--title=bt" "-e" "~/.config/waybar/scripts/bluetooth"; }
+	Mod+N { spawn "ghostty" "--class=org.haxi0.waybar-popup" "--title=net" "-e" "~/.config/waybar/scripts/network"; }
+	Mod+P { spawn "ghostty" "--class=org.haxi0.waybar-popup" "--title=power" "-e" "~/.config/waybar/scripts/power"; }
+	Mod+U { spawn "ghostty" "--class=org.haxi0.waybar-popup" "--title=update" "-e" "~/.config/waybar/scripts/update"; }
 
-# Launch CLI
-bind = $mod, B, exec, $terminal -e $scripts/bluetooth
-bind = $mod, N, exec, $terminal -e $scripts/network
-bind = $mod, O, exec, $terminal -e $scripts/power
-bind = $mod, U, exec, $terminal -e $scripts/update
+	Mod+Alt+B { spawn-sh "~/.config/waybar/scripts/bluetooth off"; }
+	Mod+Alt+N { spawn-sh "~/.config/waybar/scripts/network off"; }
+	Mod+Alt+U { spawn-sh "pkill -RTMIN+1 waybar"; }
 
-# Toggle off Bluetooth/Wi-Fi
-bind = $mod Alt, B, exec, $scripts/bluetooth off
-bind = $mod Alt, N, exec, $scripts/network off
+	XF86AudioMicMute allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume input mute"; }
+	XF86AudioMute allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume output mute"; }
+	XF86AudioLowerVolume allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume output lower"; }
+	XF86AudioRaiseVolume allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/volume output raise"; }
 
-# Refresh `custom/update` module
-bind = $mod Alt, U, exec, pkill -RTMIN+1 waybar
-
-# Adjust volume
-bindl = , XF86AudioMicMute, exec, $scripts/volume input mute
-bindl = , XF86AudioMute, exec, $scripts/volume output mute
-bindel = , XF86AudioLowerVolume, exec, $scripts/volume output lower
-bindel = , XF86AudioRaiseVolume, exec, $scripts/volume output raise
-
-# Adjust brightness
-bindel = , XF86MonBrightnessDown, exec, $scripts/backlight down
-bindel = , XF86MonBrightnessUp, exec, $scripts/backlight up
+	XF86MonBrightnessDown allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/backlight down"; }
+	XF86MonBrightnessUp allow-when-locked=true { spawn-sh "~/.config/waybar/scripts/backlight up"; }
+}
 ```
 
 #
@@ -200,6 +191,5 @@ cp themes/catppuccin-latte.css theme.css
 
 ### References
 
-- [Hyprland wiki: Binds ↗](https://wiki.hypr.land/Configuring/Binds/)
 - [Nerd Fonts wiki: Glyph Sets](https://github.com/ryanoasis/nerd-fonts/wiki/Glyph-Sets-and-Code-Points)
 - [Waybar wiki](https://github.com/Alexays/Waybar/wiki)

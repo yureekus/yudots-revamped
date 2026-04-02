@@ -1,93 +1,42 @@
 #!/usr/bin/env bash
 #
-# Update packages from the system package manager.
+# Apply NixOS system updates.
 # Passing "module" returns the update status in JSON format.
-#
-# On Arch-based systems this uses pacman/checkupdates.
-# On NixOS it reports a neutral state and points the user at nixos-rebuild.
 #
 # Author:  Jesse Mirabel <sejjymvm@gmail.com>
 # Date:    August 16, 2025
 # License: MIT
 
-TIMEOUT=10
-HELPERS=( aura paru pikaur trizen yay )
+DEFAULT_FLAKE_PATH="${YUDOTS_FLAKE_PATH:-/etc/nixos}"
+DEFAULT_HOST="${YUDOTS_HOSTNAME:-$(hostname)}"
 
 printf() {
 	command printf "$@" >&2
 }
 
-get_helper() {
-	local helper
-	for helper in "${HELPERS[@]}"; do
-		if command -v "$helper" > /dev/null; then
-			HELPER=$helper
-			break
-		fi
-	done
-}
-
-is_nixos() {
-	[[ -f /etc/NIXOS ]]
+nixos_flake_target() {
+	printf '%s#%s' "$DEFAULT_FLAKE_PATH" "$DEFAULT_HOST"
 }
 
 check_updates() {
-	if is_nixos || ! command -v checkupdates >/dev/null 2>&1; then
-		UNSUPPORTED=true
-		return 0
+	READY=false
+
+	if [[ -f "$DEFAULT_FLAKE_PATH/flake.nix" ]]; then
+		READY=true
 	fi
-
-	local output status
-
-	output=$(timeout $TIMEOUT checkupdates)
-	status=$?
-
-	if ((status != 0 && status != 2)); then
-		FAILED=true
-		return 1
-	fi
-
-	UPDATES=$(grep -c . <<< "$output")
-
-	if [[ -z $HELPER ]]; then
-		return 0
-	fi
-
-	local aur_output aur_status
-
-	aur_output=$(timeout $TIMEOUT "$HELPER" -Quaq)
-	aur_status=$?
-
-	if ((${#aur_output} > 0 && aur_status != 0)); then
-		FAILED=true
-		return 1
-	fi
-
-	AUR_UPDATES=$(grep -c . <<< "$aur_output")
 }
 
 update_packages() {
-	if is_nixos; then
-		notify-send "NixOS Update" "Run nixos-rebuild switch --flake <path>#<host>"
-		printf "Use nixos-rebuild switch --flake <path>#<host> to update this system.\n"
+	if [[ "$READY" != true ]]; then
+		notify-send "NixOS Update" "Set YUDOTS_FLAKE_PATH or keep your system flake in /etc/nixos"
+		printf "Unable to find a flake at %s/flake.nix.\n" "$DEFAULT_FLAKE_PATH"
+		printf "Set YUDOTS_FLAKE_PATH and optionally YUDOTS_HOSTNAME, then rerun.\n"
 		read -rsn 1 -p "Press any key to exit..."
 		return 0
 	fi
 
-	if ! command -v checkupdates >/dev/null 2>&1 || ! command -v pacman >/dev/null 2>&1; then
-		notify-send "Update Unsupported" "No supported pacman update tooling was found"
-		printf "No supported pacman update tooling was found.\n"
-		read -rsn 1 -p "Press any key to exit..."
-		return 0
-	fi
-
-	printf "Updating pacman packages...\n"
-	sudo pacman -Syu
-
-	if [[ -n $HELPER ]]; then
-		printf "\nUpdating AUR packages...\n"
-		"$HELPER" -Syu
-	fi
+	printf "Applying NixOS update from %s\n" "$(nixos_flake_target)"
+	sudo nixos-rebuild switch --flake "$(nixos_flake_target)"
 
 	notify-send "Update Complete" -i "package-install"
 
@@ -100,23 +49,13 @@ display_module() {
 
 	if $FAILED; then
 		icon='󰒑'
-		tooltip="<b>Failed to fetch updates</b>\nRight-click to retry"
-	elif $UNSUPPORTED; then
-		icon='󱓞'
-		tooltip="Updates are managed outside Waybar on this system"
-	elif ((UPDATES + AUR_UPDATES == 0)); then
+		tooltip="<b>Failed to apply updates</b>\nRight-click to retry"
+	elif [[ "$READY" != true ]]; then
 		icon='󰸟'
-		tooltip="No updates available"
+		tooltip="Set YUDOTS_FLAKE_PATH or keep the system flake in /etc/nixos"
 	else
-		icon='󰄠'
-		tooltip="<b>Pacman</b>: $UPDATES"
-
-		if [[ -n $HELPER ]]; then
-			local padding
-			printf -v padding "%*s" $((6 - ${#HELPER})) ''
-
-			tooltip+="\n<b>${HELPER^}</b>: $padding$AUR_UPDATES"
-		fi
+		icon='󱄅'
+		tooltip="Run nixos-rebuild switch for $(nixos_flake_target)"
 	fi
 
 	command printf '{ "text": "%s", "tooltip": "%s" }\n' "$icon" "$tooltip"
@@ -124,11 +63,6 @@ display_module() {
 
 main() {
 	FAILED=false
-	UNSUPPORTED=false
-	UPDATES=0
-	AUR_UPDATES=0
-
-	get_helper
 
 	case $1 in
 		module)
@@ -136,7 +70,7 @@ main() {
 			display_module
 			;;
 		*)
-			printf "Checking for updates...\n"
+			printf "Checking NixOS update configuration...\n"
 			check_updates
 			update_packages
 			pkill -RTMIN+1 waybar # Refresh the module

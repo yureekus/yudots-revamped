@@ -6,7 +6,7 @@
 
 An opinionated NixOS desktop setup built around Niri, Waybar, Matugen, and a small pile of personal preferences.
 
-This repository is now packaged as a flake. The old Artix/OpenRC installer has been removed in favor of a NixOS module for system services and packages plus a Home Manager module that seeds the user config into place.
+This repository is packaged as a flake. It uses a NixOS module for system services and packages plus a Home Manager module that seeds the user config into place.
 
 ## What This Includes
 
@@ -95,9 +95,9 @@ Matugen-generated files remain writable. On each Home Manager activation the rep
 
 ## Notes
 
-- The Waybar update module is still present, but on NixOS it intentionally shows a neutral state and tells you to use `nixos-rebuild` instead of trying to run pacman.
+- The Waybar update module runs `nixos-rebuild switch --flake` by default against `/etc/nixos#$(hostname)`. Override that with `YUDOTS_FLAKE_PATH` and `YUDOTS_HOSTNAME` if your system flake lives elsewhere.
 - The Ghostty config no longer hardcodes `/usr/bin/fish`, which avoids the usual NixOS path breakage.
-- Some optional applications from the old Arch setup are not forced here. The NixOS module only installs packages that are present in the selected `nixpkgs`, and you can extend that with `programs.yudots.extraPackages`.
+- Some optional applications are not forced here. The NixOS module only installs packages that are present in the selected `nixpkgs`, and you can extend that with `programs.yudots.extraPackages`.
 - Audio recovery helper:
   - `~/.config/niri/scripts/audio-recover ensure`
   - `~/.config/niri/scripts/audio-recover status`
@@ -109,7 +109,6 @@ Matugen-generated files remain writable. On each Home Manager activation the rep
 .
 |-- config/        # User config seeded by the Home Manager module
 |-- nix/           # NixOS and Home Manager modules
-|-- system/        # Reference system files reflected in the NixOS module
 |-- wallpapers/    # Bundled wallpapers copied into ~/.local/share
 |-- flake.nix      # Flake entrypoint
 |-- preview.png    # Screenshot used in this README
