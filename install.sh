@@ -756,29 +756,59 @@ remove_existing_path() {
     run_cmd rm -rf -- "$target_path" || return 1
 }
 
-copy_dotfiles() {
+is_yudots_already_installed() {
+    local data_root="$target_home/.local/share/yudots-revamped"
+    local niri_config="$target_home/.config/niri/config.kdl"
+
+    if [[ -d "$data_root" || -f "$niri_config" ]]; then
+        return 0
+    fi
+
+    return 1
+}
+
+show_one_time_preinstall_warning() {
+    local warning_state_dir="$target_home/.local/state/yudots-revamped"
+    local warning_marker="$warning_state_dir/preinstall-warning-shown"
     local warning_result=0
-    local source=""
-    local entry=""
-    local target_path=""
+
+    if is_yudots_already_installed; then
+        info "existing yudots install detected, skipping one-time preinstall warning"
+        return 0
+    fi
+
+    if [[ -f "$warning_marker" ]]; then
+        info "one-time preinstall warning was already acknowledged, skipping"
+        return 0
+    fi
 
     while true; do
         warning_result=0
-        pause_on_warning "existing matching config directories and files will be deleted and replaced with the yudots versions." || warning_result=$?
+        pause_on_warning "this installer will replace matching files under ~/.config and ~/.bash_profile. this warning is shown once before first install." || warning_result=$?
 
         case "$warning_result" in
             0)
                 break
                 ;;
             1)
-                error "stopping because dotfile replacement was declined"
+                error "stopping because the one-time preinstall warning was declined"
                 return 1
                 ;;
             2)
-                warn "asking again before replacing dotfiles"
+                warn "showing the one-time preinstall warning again"
                 ;;
         esac
     done
+
+    mkdir -p "$warning_state_dir" || return 1
+    : > "$warning_marker" || return 1
+    info "recorded one-time preinstall warning marker: $warning_marker"
+}
+
+copy_dotfiles() {
+    local source=""
+    local entry=""
+    local target_path=""
 
     mkdir -p "$target_home/.config" || return 1
 
@@ -870,6 +900,7 @@ main() {
     run_step "checking who is running the installer" check_user_context || exit 1
     run_step "checking the repo layout" check_repo_layout || exit 1
     run_step "checking for artix linux with openrc" check_supported_system || exit 1
+    run_step "showing the one-time preinstall replacement warning" show_one_time_preinstall_warning || exit 1
     run_step "installing bootstrap packages for building paru" bootstrap_build_tools || exit 1
     run_step "installing paru from source" install_paru_from_source || exit 1
     run_step "installing the required packages" install_required_packages || exit 1
