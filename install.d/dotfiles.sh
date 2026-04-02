@@ -135,6 +135,11 @@ copy_niri_dotfiles() {
     local source=""
     local entry=""
     local target_path=""
+    local is_first_install=0
+
+    if ! is_yudots_already_installed; then
+        is_first_install=1
+    fi
 
     assert_managed_target_path "$target_dir" || return 1
     mkdir -p "$target_dir" || return 1
@@ -142,9 +147,16 @@ copy_niri_dotfiles() {
     for source in "$source_dir"/*; do
         entry="$(basename "$source")"
 
-        if [[ "$entry" == "custom" && -d "$target_custom_dir" ]]; then
-            info "preserving existing $target_custom_dir"
-            continue
+        if [[ "$entry" == "custom" ]]; then
+            if (( is_first_install )); then
+                if [[ -e "$target_custom_dir" || -L "$target_custom_dir" ]]; then
+                    info "preserving existing $target_custom_dir"
+                    continue
+                fi
+            else
+                info "skipping $target_custom_dir because niri custom config is only seeded on first install"
+                continue
+            fi
         fi
 
         target_path="$target_dir/$entry"
