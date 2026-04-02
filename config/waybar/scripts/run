@@ -3,10 +3,6 @@
 set -u
 
 running=true
-log_dir="${XDG_STATE_HOME:-$HOME/.local/state}/waybar"
-log_file="$log_dir/restarts.log"
-
-mkdir -p "$log_dir"
 
 stop() {
 	running=false
@@ -23,8 +19,5 @@ while $running; do
 		break
 	fi
 
-	printf '%s waybar exited with status %s, restarting in 1s\n' \
-		"$(date '+%Y-%m-%d %H:%M:%S')" \
-		"$status" >> "$log_file"
 	sleep 1
 done
