@@ -183,8 +183,8 @@ start_sudo_keepalive() {
 
     (
         while true; do
-            sleep 60
-            sudo -n true >/dev/null 2>&1 || exit 0
+            sleep 20
+            sudo -n -v >/dev/null 2>&1 || exit 0
         done
     ) &
     sudo_keepalive_pid=$!

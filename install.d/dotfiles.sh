@@ -196,9 +196,16 @@ prepare_wallpaper_and_theme_state() {
 
     if [[ -n "$current_wallpaper" && -f "$current_wallpaper" ]]; then
         rm -f -- "$skip_marker" || return 1
-        run_cmd matugen image "$current_wallpaper" --source-color-index 0 || return 1
+
+        # Only trigger live template hooks when running inside a graphical session.
+        if [[ -n "${DISPLAY:-}" || -n "${WAYLAND_DISPLAY:-}" || -n "${NIRI_SOCKET:-}" ]]; then
+            run_cmd matugen image "$current_wallpaper" --source-color-index 0 || return 1
+            info "regenerated the color scheme from the existing wallpaper"
+        else
+            info "detected a non-graphical session; skipped live theme reload hooks"
+        fi
+
         info "kept existing wallpaper state: $current_wallpaper"
-        info "regenerated the color scheme from the existing wallpaper"
         return 0
     fi
 

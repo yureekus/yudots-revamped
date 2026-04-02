@@ -66,13 +66,20 @@ stream_command_output() {
 
 run_cmd() {
     local exit_code=0
+    local -a cmd=("$@")
 
-    info "running: $*"
-    "$@" 2>&1 | stream_command_output
+    if (( ${#cmd[@]} > 0 )) && [[ "${cmd[0]}" == "sudo" ]]; then
+        if ! (( ${#cmd[@]} > 1 )) || [[ "${cmd[1]}" != "-v" ]]; then
+            cmd=(sudo -n "${cmd[@]:1}")
+        fi
+    fi
+
+    info "running: ${cmd[*]}"
+    "${cmd[@]}" 2>&1 | stream_command_output
     exit_code="${PIPESTATUS[0]}"
 
     if (( exit_code != 0 )); then
-        error "command failed with exit code $exit_code: $*"
+        error "command failed with exit code $exit_code: ${cmd[*]}"
     fi
 
     return "$exit_code"

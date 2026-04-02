@@ -67,7 +67,41 @@ enable_service_in_default() {
         return 0
     fi
 
-    run_cmd sudo rc-service "$service_name" start
+    # OpenRC can report NetworkManager as inactive before first link is ready,
+    # even if the daemon is already running and usable.
+    if [[ "$service_name" == "NetworkManager" || "$service_name" == "networkmanager" ]]; then
+        if command -v nmcli >/dev/null 2>&1; then
+            if [[ "$(nmcli -t -f RUNNING general 2>/dev/null || true)" == "running" ]]; then
+                info "$service_name daemon is already running"
+                return 0
+            fi
+        fi
+
+        if pgrep -x NetworkManager >/dev/null 2>&1; then
+            info "$service_name daemon is already running"
+            return 0
+        fi
+    fi
+
+    if run_cmd sudo rc-service "$service_name" start; then
+        return 0
+    fi
+
+    if [[ "$service_name" == "NetworkManager" || "$service_name" == "networkmanager" ]]; then
+        if command -v nmcli >/dev/null 2>&1; then
+            if [[ "$(nmcli -t -f RUNNING general 2>/dev/null || true)" == "running" ]]; then
+                warn "$service_name start returned non-zero, but the daemon is running; continuing"
+                return 0
+            fi
+        fi
+
+        if pgrep -x NetworkManager >/dev/null 2>&1; then
+            warn "$service_name start returned non-zero, but the daemon is running; continuing"
+            return 0
+        fi
+    fi
+
+    return 1
 }
 
 enable_core_services() {
@@ -265,29 +299,11 @@ remove_connman_packages() {
 }
 
 handle_network_stack() {
-    local warning_result=0
-
     require_commands pacman sudo || return 1
     record_network_state || return 1
 
     if (( connman_was_enabled || connman_was_running )); then
-        while true; do
-            warning_result=0
-            pause_on_warning "connman is enabled on this system. the installer will disable it, switch you to networkmanager, test connectivity, and only then remove connman." || warning_result=$?
-
-            case "$warning_result" in
-                0)
-                    break
-                    ;;
-                1)
-                    error "stopping because the network migration was declined"
-                    return 1
-                    ;;
-                2)
-                    warn "asking again before the network migration starts"
-                    ;;
-            esac
-        done
+        warn "connman is enabled on this system. the installer will disable it, switch to networkmanager, test connectivity, and then remove connman."
 
         if (( connman_was_running )); then
             run_cmd sudo rc-service "$connman_service" stop || return 1

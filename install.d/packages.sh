@@ -2,7 +2,8 @@
 
 bootstrap_build_tools() {
     require_commands pacman sudo || return 1
-    run_cmd sudo pacman -S --needed --noconfirm --color always base-devel git
+    # Install rust up front so makepkg never prompts for a cargo provider.
+    run_cmd sudo pacman -S --needed --noconfirm --color always base-devel git rust
 }
 
 install_paru_from_source() {
@@ -57,6 +58,7 @@ install_required_packages() {
         mako
         swayidle
         swww
+        jack2
         ffmpeg
         zenity
     )
