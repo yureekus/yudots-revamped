@@ -44,7 +44,7 @@ let
 in
 {
   options.programs.yudots = {
-    enable = lib.mkEnableOption "Yudots Revamped NixOS integration";
+    enable = lib.mkEnableOption "yudots nixos integration";
 
     user = lib.mkOption {
       type = lib.types.nullOr lib.types.str;
@@ -56,7 +56,7 @@ in
     extraPackages = lib.mkOption {
       type = lib.types.listOf lib.types.package;
       default = [];
-      description = "Additional packages to install alongside the Yudots defaults.";
+      description = "Additional packages to install alongside the yudots defaults.";
     };
 
     withFonts = lib.mkOption {

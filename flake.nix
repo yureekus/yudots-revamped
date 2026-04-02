@@ -1,5 +1,5 @@
 {
-  description = "Yudots Revamped dotfiles packaged for NixOS and Home Manager";
+  description = "yudots dotfiles packaged for NixOS and Home Manager";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";

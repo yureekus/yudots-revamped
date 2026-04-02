@@ -12,7 +12,7 @@ let
 in
 {
   options.programs.yudots = {
-    enable = lib.mkEnableOption "Yudots Revamped home configuration";
+    enable = lib.mkEnableOption "yudots home configuration";
 
     launchFromTty1 = lib.mkOption {
       type = lib.types.bool;
@@ -24,7 +24,7 @@ in
   config = lib.mkIf cfg.enable {
     xdg.enable = true;
 
-    home.activation.installYudots = config.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
+    home.activation.installyudots = config.lib.hm.dag.entryAfter [ "writeBoundary" ] ''
       set -eu
 
       repo_config_dir='${repoRoot}/config'

@@ -7,8 +7,8 @@
 # Date:    August 16, 2025
 # License: MIT
 
-DEFAULT_FLAKE_PATH="${YUDOTS_FLAKE_PATH:-/etc/nixos}"
-DEFAULT_HOST="${YUDOTS_HOSTNAME:-$(hostname)}"
+DEFAULT_FLAKE_PATH="${yudots_flake_path:-${YUDOTS_FLAKE_PATH:-/etc/nixos}}"
+DEFAULT_HOST="${yudots_hostname:-${YUDOTS_HOSTNAME:-$(hostname)}}"
 
 printf() {
 	command printf "$@" >&2
@@ -28,9 +28,9 @@ check_updates() {
 
 update_packages() {
 	if [[ "$READY" != true ]]; then
-		notify-send "NixOS Update" "Set YUDOTS_FLAKE_PATH or keep your system flake in /etc/nixos"
+		notify-send "NixOS Update" "Set yudots_flake_path or keep your system flake in /etc/nixos"
 		printf "Unable to find a flake at %s/flake.nix.\n" "$DEFAULT_FLAKE_PATH"
-		printf "Set YUDOTS_FLAKE_PATH and optionally YUDOTS_HOSTNAME, then rerun.\n"
+		printf "Set yudots_flake_path and optionally yudots_hostname, then rerun.\n"
 		read -rsn 1 -p "Press any key to exit..."
 		return 0
 	fi
@@ -52,7 +52,7 @@ display_module() {
 		tooltip="<b>Failed to apply updates</b>\nRight-click to retry"
 	elif [[ "$READY" != true ]]; then
 		icon='󰸟'
-		tooltip="Set YUDOTS_FLAKE_PATH or keep the system flake in /etc/nixos"
+		tooltip="Set yudots_flake_path or keep the system flake in /etc/nixos"
 	else
 		icon='󱄅'
 		tooltip="Run nixos-rebuild switch for $(nixos_flake_target)"
