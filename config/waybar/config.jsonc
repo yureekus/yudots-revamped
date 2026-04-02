@@ -21,7 +21,7 @@
 	"modules-center": [
 		"niri/language",
 		"custom/left_div#2",
-		"temperature",
+		"custom/cpu_temperature",
 		"custom/left_div#3",
 		"memory",
 		"custom/left_div#4",

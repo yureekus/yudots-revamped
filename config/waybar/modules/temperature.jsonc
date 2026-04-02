@@ -1,18 +1,9 @@
 {
-	"temperature": {
-		"thermal-zone": 0,
-		// "hwmon-path":
-		// "hwmon-path-abs":
-		// "input-filename":
-		// "warning-threshold":
-		"critical-threshold": 90,
+	"custom/cpu_temperature": {
+		"exec": "~/.config/waybar/scripts/cpu_temperature",
+		"return-type": "json",
 		"interval": 5,
-		// "format-warning":
-		"format-critical": "󰀦 {temperatureC}°C",
-		"format": "{icon} {temperatureC}°C",
-		"format-icons": [
-			"󱃃", "󰔏", "󱃂"
-		],
+		"format": "{}",
 		// "rotate":
 		"min-length": 8,
 		"max-length": 8,
@@ -25,8 +16,8 @@
 		// "on-scroll-up":
 		// "on-scroll-down":
 		// "smooth-scrolling-threshold":
-		"tooltip": false,
-		"tooltip-format": "Temperature in Fahrenheit: {temperatureF}°F"
+		"tooltip": true
+		// "tooltip-format":
 		// "menu":
 		// "menu-file":
 		// "menu-actions":

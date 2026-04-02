@@ -15,7 +15,7 @@
 #custom-left_div.2 {
 	color: @temperature;
 }
-#temperature {
+#custom-cpu_temperature {
 	background-color: @temperature;
 }
 

@@ -1,0 +1,129 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+CACHE_FILE="/tmp/waybar-cpu-temp-path"
+
+read_temp_c() {
+    local path="$1"
+    local raw
+    raw="$(cat "$path" 2>/dev/null || true)"
+    [[ -n "$raw" ]] || return 1
+
+    # Sysfs temperature is usually in millidegrees Celsius.
+    if [[ "$raw" =~ ^[0-9]+$ ]] && (( raw > 1000 )); then
+        printf '%d' $(( (raw + 500) / 1000 ))
+    elif [[ "$raw" =~ ^[0-9]+$ ]]; then
+        printf '%d' "$raw"
+    else
+        return 1
+    fi
+}
+
+pick_hwmon_input() {
+    local dir="$1"
+    local label_regex="$2"
+    local label_file idx input_file
+
+    shopt -s nullglob
+    for label_file in "$dir"/temp*_label; do
+        if grep -Eiq "$label_regex" "$label_file"; then
+            idx="${label_file##*/temp}"
+            idx="${idx%%_label}"
+            input_file="$dir/temp${idx}_input"
+            [[ -r "$input_file" ]] && { echo "$input_file"; return 0; }
+        fi
+    done
+
+    for input_file in "$dir"/temp*_input; do
+        [[ -r "$input_file" ]] && { echo "$input_file"; return 0; }
+    done
+    return 1
+}
+
+discover_sensor_path() {
+    local dir name
+
+    # Prefer common CPU package sensors.
+    for dir in /sys/class/hwmon/hwmon*; do
+        [[ -d "$dir" && -r "$dir/name" ]] || continue
+        name="$(cat "$dir/name")"
+        case "$name" in
+            coretemp)
+                pick_hwmon_input "$dir" 'Package id|Physical id' && return 0
+                ;;
+            k10temp|zenpower|cpu_thermal)
+                pick_hwmon_input "$dir" 'Tctl|Tdie|CPU|Package' && return 0
+                ;;
+        esac
+    done
+
+    # Next, any hwmon sensor explicitly labeled CPU/package-like.
+    for dir in /sys/class/hwmon/hwmon*; do
+        [[ -d "$dir" ]] || continue
+        pick_hwmon_input "$dir" 'CPU|Package|Tctl|Tdie|PECI|Physical id' && return 0
+    done
+
+    # Fallback to thermal zones that look CPU-related.
+    local zone type
+    for zone in /sys/class/thermal/thermal_zone*; do
+        [[ -r "$zone/type" && -r "$zone/temp" ]] || continue
+        type="$(cat "$zone/type")"
+        case "$type" in
+            x86_pkg_temp|cpu-thermal|cpu_thermal|soc_thermal|pkg_temp)
+                echo "$zone/temp"
+                return 0
+                ;;
+        esac
+    done
+
+    # Last resort: first readable thermal zone.
+    for zone in /sys/class/thermal/thermal_zone*; do
+        [[ -r "$zone/temp" ]] && { echo "$zone/temp"; return 0; }
+    done
+
+    return 1
+}
+
+sensor_path=""
+if [[ -r "$CACHE_FILE" ]]; then
+    cached="$(cat "$CACHE_FILE" 2>/dev/null || true)"
+    if [[ -n "$cached" && -r "$cached" ]]; then
+        sensor_path="$cached"
+    fi
+fi
+
+if [[ -z "$sensor_path" ]]; then
+    sensor_path="$(discover_sensor_path || true)"
+    if [[ -n "$sensor_path" ]]; then
+        printf '%s\n' "$sensor_path" > "$CACHE_FILE"
+    fi
+fi
+
+if [[ -z "$sensor_path" ]]; then
+    printf '{"text":"󰔄 N/A","class":"critical","tooltip":"CPU temperature sensor not found"}\n'
+    exit 0
+fi
+
+temp_c="$(read_temp_c "$sensor_path" || true)"
+if [[ -z "$temp_c" ]]; then
+    printf '{"text":"󰔄 N/A","class":"critical","tooltip":"Failed reading %s"}\n' "$sensor_path"
+    exit 0
+fi
+
+icon="󱃃"
+class=""
+if (( temp_c >= 90 )); then
+    icon="󰀦"
+    class="critical"
+elif (( temp_c >= 75 )); then
+    icon="󱃂"
+    class="warning"
+elif (( temp_c >= 55 )); then
+    icon="󰔏"
+fi
+
+if [[ -n "$class" ]]; then
+    printf '{"text":"%s %d°C","class":"%s","tooltip":"CPU temperature: %d°C\\nSource: %s"}\n' "$icon" "$temp_c" "$class" "$temp_c" "$sensor_path"
+else
+    printf '{"text":"%s %d°C","tooltip":"CPU temperature: %d°C\\nSource: %s"}\n' "$icon" "$temp_c" "$temp_c" "$sensor_path"
+fi
