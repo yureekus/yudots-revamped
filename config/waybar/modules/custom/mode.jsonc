@@ -4,6 +4,7 @@
 		"return-type": "json",
 		"interval": 0,
 		"signal": 2,
+		"exec-on-event": false,
 		"format": "{}",
 		"on-click": "~/.config/waybar/scripts/mode toggle",
 		"tooltip": false
