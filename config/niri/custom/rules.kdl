@@ -5,3 +5,8 @@
 window-rule {
     open-fullscreen false
 }
+
+// Focus newly opened windows, including app activations from browser links/notifications.
+window-rule {
+    open-focused true
+}

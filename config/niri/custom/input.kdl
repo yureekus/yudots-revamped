@@ -2,6 +2,9 @@
 // Keep keyboard, touchpad, mouse, and trackpoint tuning here.
 
 input {
+    // Focus windows and outputs automatically when moving the cursor into them.
+    focus-follows-mouse
+
     keyboard {
         xkb {
             layout "us,ru"
