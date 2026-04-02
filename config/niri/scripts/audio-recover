@@ -1,0 +1,197 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly DAEMONS=(
+    pipewire
+    pipewire-pulse
+    wireplumber
+)
+
+log() {
+    printf '[audio-recover] %s\n' "$*"
+}
+
+have_cmd() {
+    command -v "$1" >/dev/null 2>&1
+}
+
+is_running() {
+    local daemon="$1"
+    pgrep -xu "$USER" -x "$daemon" >/dev/null 2>&1
+}
+
+all_daemons_running() {
+    local daemon=""
+    for daemon in "${DAEMONS[@]}"; do
+        if ! is_running "$daemon"; then
+            return 1
+        fi
+    done
+    return 0
+}
+
+audio_endpoints_ready() {
+    if have_cmd wpctl; then
+        wpctl inspect @DEFAULT_AUDIO_SINK@ >/dev/null 2>&1 || return 1
+        wpctl inspect @DEFAULT_AUDIO_SOURCE@ >/dev/null 2>&1 || return 1
+        return 0
+    fi
+
+    if have_cmd pactl; then
+        pactl info >/dev/null 2>&1
+        return $?
+    fi
+
+    return 1
+}
+
+is_healthy() {
+    all_daemons_running && audio_endpoints_ready
+}
+
+start_daemon_if_needed() {
+    local daemon="$1"
+
+    if is_running "$daemon"; then
+        return 0
+    fi
+
+    if ! have_cmd "$daemon"; then
+        log "missing executable: $daemon"
+        return 1
+    fi
+
+    "$daemon" >/dev/null 2>&1 &
+}
+
+start_audio_stack() {
+    start_daemon_if_needed pipewire
+    sleep 0.2
+    start_daemon_if_needed pipewire-pulse
+    sleep 0.2
+    start_daemon_if_needed wireplumber
+}
+
+stop_audio_stack() {
+    pkill -xu "$USER" -x wireplumber >/dev/null 2>&1 || true
+    pkill -xu "$USER" -x pipewire-pulse >/dev/null 2>&1 || true
+    pkill -xu "$USER" -x pipewire >/dev/null 2>&1 || true
+}
+
+restart_audio_stack() {
+    stop_audio_stack
+    sleep 0.4
+    start_audio_stack
+}
+
+wait_until_healthy() {
+    local tries="${AUDIO_RECOVER_TRIES:-8}"
+    local delay="${AUDIO_RECOVER_DELAY_SECONDS:-1}"
+    local i=0
+
+    while (( i < tries )); do
+        if is_healthy; then
+            return 0
+        fi
+        sleep "$delay"
+        (( i += 1 ))
+    done
+
+    return 1
+}
+
+print_status() {
+    local daemon=""
+
+    for daemon in "${DAEMONS[@]}"; do
+        if is_running "$daemon"; then
+            printf '%s: running\n' "$daemon"
+            pgrep -axu "$USER" "$daemon" || true
+        else
+            printf '%s: stopped\n' "$daemon"
+        fi
+    done
+
+    if have_cmd wpctl; then
+        wpctl get-volume @DEFAULT_AUDIO_SINK@ 2>/dev/null || true
+        wpctl get-volume @DEFAULT_AUDIO_SOURCE@ 2>/dev/null || true
+    elif have_cmd pactl; then
+        pactl info 2>/dev/null | sed -n '1,10p' || true
+    fi
+}
+
+ensure_audio() {
+    if [[ -z "${DBUS_SESSION_BUS_ADDRESS:-}" ]]; then
+        log "DBUS_SESSION_BUS_ADDRESS is not set; audio may fail outside graphical sessions"
+    fi
+
+    if is_healthy; then
+        log "audio stack is healthy"
+        return 0
+    fi
+
+    log "audio stack is unhealthy, restarting daemons"
+    restart_audio_stack
+
+    if wait_until_healthy; then
+        log "audio stack recovered"
+        return 0
+    fi
+
+    log "audio stack is still unhealthy after restart"
+    print_status || true
+    return 1
+}
+
+watch_audio() {
+    local interval="${AUDIO_RECOVER_INTERVAL_SECONDS:-20}"
+
+    ensure_audio || true
+    while true; do
+        sleep "$interval"
+        ensure_audio || true
+    done
+}
+
+usage() {
+    cat <<'EOF'
+Usage: audio-recover {ensure|status|watch|restart}
+
+  ensure   Check audio health and recover PipeWire/WirePlumber if needed
+  status   Print daemon and endpoint status
+  watch    Keep checking and auto-recover periodically
+  restart  Force-restart the whole audio stack
+
+Environment:
+  AUDIO_RECOVER_TRIES             Number of health retries after restart (default: 8)
+  AUDIO_RECOVER_DELAY_SECONDS     Delay between retries in seconds (default: 1)
+  AUDIO_RECOVER_INTERVAL_SECONDS  Watch loop interval in seconds (default: 20)
+EOF
+}
+
+main() {
+    local action="${1:-ensure}"
+
+    case "$action" in
+        ensure)
+            ensure_audio
+            ;;
+        status)
+            print_status
+            ;;
+        watch)
+            watch_audio
+            ;;
+        restart)
+            restart_audio_stack
+            wait_until_healthy
+            ;;
+        *)
+            usage >&2
+            return 1
+            ;;
+    esac
+}
+
+main "$@"

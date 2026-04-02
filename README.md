@@ -171,6 +171,10 @@ It also installs:
 - If ConnMan is currently active, the script migrates to NetworkManager and checks connectivity before removing ConnMan packages.
 - The installer makes sure your user is in the `video` group for brightness control and switches your login shell to `bash` if needed.
 - After install, relogin or reboot. Rebooting is the safer option.
+- Audio recovery helper:
+  - `~/.config/niri/scripts/audio-recover ensure`
+  - `~/.config/niri/scripts/audio-recover status`
+  - `~/.config/niri/scripts/audio-recover watch`
 
 ## Credits
 

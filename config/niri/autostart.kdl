@@ -1,12 +1,16 @@
 // Startup
-spawn-at-startup "pipewire"
-spawn-at-startup "wireplumber"
-spawn-at-startup "pipewire-pulse"
+
+// Core session daemons and helpers.
+spawn-sh-at-startup "sleep 1 && ~/.config/niri/scripts/audio-recover ensure"
 spawn-sh-at-startup "sleep 2 && ~/.config/niri/scripts/micmute-led watch"
-spawn-sh-at-startup "sleep 1 && ~/.config/waybar/scripts/run"
+
+// Desktop UI services.
 spawn-sh-at-startup "sleep 1 && mako"
 spawn-sh-at-startup "sleep 1 && swww-daemon"
 spawn-sh-at-startup "sleep 1 && ~/.config/niri/scripts/themectl reapply"
+spawn-sh-at-startup "sleep 1 && ~/.config/waybar/scripts/run"
+
+// Idle behavior and lock flow.
 spawn-sh-at-startup "sleep 1 && swayidle -w timeout 240 '~/.config/niri/scripts/lock' timeout 300 'niri msg action power-off-monitors' resume 'niri msg action power-on-monitors' lock '~/.config/niri/scripts/lock' before-sleep '~/.config/niri/scripts/lock'"
 
 include "custom/autostart.kdl"
