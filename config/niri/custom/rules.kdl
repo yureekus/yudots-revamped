@@ -1,1 +1,6 @@
 // Local opinionated window rules go here.
+
+// Prevent apps from opening directly in fullscreen mode.
+window-rule {
+    open-fullscreen false
+}
