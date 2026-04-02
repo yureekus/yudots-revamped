@@ -1,4 +1,5 @@
-// Local opinionated window rules go here.
+// Add personal window and layer rules here.
+// This file loads after `rules.kdl`.
 
 // Prevent apps from opening directly in fullscreen mode.
 window-rule {

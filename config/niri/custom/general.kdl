@@ -1,1 +1,2 @@
-// Local opinionated general settings go here.
+// Add general behavior overrides here.
+// This file loads after `general.kdl`.

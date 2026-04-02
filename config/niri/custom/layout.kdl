@@ -1,1 +1,2 @@
-// Local opinionated layout settings go here.
+// Add layout overrides here.
+// This file loads after `layout.kdl`.

@@ -1,1 +1,2 @@
-// Local opinionated binds go here.
+// Add personal keybind overrides here.
+// This file loads after `binds.kdl`.

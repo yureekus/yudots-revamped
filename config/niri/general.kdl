@@ -8,5 +8,3 @@ hotkey-overlay {
 }
 
 prefer-no-csd
-
-include "custom/general.kdl"

@@ -3,11 +3,23 @@
 // Check the wiki for a full description of the configuration:
 // https://yalter.github.io/niri/Configuration:-Introduction
 
-include "autostart.kdl"
-include "binds.kdl"
+// Core behavior shared across machines.
 include "general.kdl"
-include "input.kdl"
 include "layout.kdl"
-include "monitors.kdl"
 include "rules.kdl"
+include "binds.kdl"
+include "autostart.kdl"
+
+// Machine-specific hardware setup.
+include "custom/input.kdl"
+include "custom/monitors.kdl"
+
+// Personal overrides layered on top of the shared defaults.
+include "custom/general.kdl"
+include "custom/layout.kdl"
+include "custom/rules.kdl"
+include "custom/binds.kdl"
+include "custom/autostart.kdl"
+
+// Generated theme stays last so colors win over static defaults.
 include "theme.kdl"

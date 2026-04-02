@@ -1,1 +1,2 @@
-// Local opinionated autostart additions go here.
+// Add machine- or workflow-specific startup commands here.
+// This file loads after `autostart.kdl`.
