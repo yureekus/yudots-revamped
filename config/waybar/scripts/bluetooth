@@ -9,7 +9,8 @@
 # Date:    August 19, 2025
 # License: MIT
 
-TIMEOUT=10
+TIMEOUT=20
+LOG_FILE="/tmp/yudots-bluetooth.log"
 
 printf() {
 	command printf "$@" >&2
@@ -23,6 +24,37 @@ fzf_ghostty() {
 			--color='border:green,label:green,info:bright-black,header:bright-black' \
 			--color='prompt:green,pointer:green,marker:green,spinner:green,query:-1,ghost:bright-black' \
 			"$@"
+}
+
+bt_info_field() {
+	bluetoothctl info "$1" | awk -v key="$2" '$1 == key":" {print $2}'
+}
+
+wait_for_info_field() {
+	local address=$1
+	local key=$2
+	local expected=$3
+	local value
+
+	local i=1
+	for ((; i <= TIMEOUT; i++)); do
+		value=$(bt_info_field "$address" "$key")
+		if [[ $value == "$expected" ]]; then
+			return 0
+		fi
+		sleep 1
+	done
+
+	return 1
+}
+
+run_bt_commands() {
+	local output
+	output=$(timeout "$TIMEOUT" bash -lc 'printf "%s\n" "$@" | bluetoothctl' bash "$@" 2>&1)
+	local status=$?
+
+	printf "%s\n" "$output" >> "$LOG_FILE"
+	return "$status"
 }
 
 power_on() {
@@ -128,21 +160,39 @@ select_device() {
 
 pair_and_connect() {
 	local paired
-	paired=$(bluetoothctl info "$ADDRESS" | awk '/Paired/ {print $2}')
+	paired=$(bt_info_field "$ADDRESS" "Paired")
 
-	if [[ $paired == no ]]; then
+	bluetoothctl scan off > /dev/null
+	: > "$LOG_FILE"
+
+	if [[ $paired != yes ]]; then
 		printf "Pairing..."
 
-		if ! timeout $TIMEOUT bluetoothctl pair "$ADDRESS" > /dev/null; then
-			notify-send "Bluetooth" "Failed to pair" -i "package-purge"
+		run_bt_commands \
+			"agent on" \
+			"default-agent" \
+			"pair $ADDRESS" \
+			"quit"
+
+		if ! wait_for_info_field "$ADDRESS" "Paired" "yes"; then
+			notify-send "Bluetooth" "Failed to pair. See /tmp/yudots-bluetooth.log" \
+				-i "package-purge"
 			exit 1
 		fi
 	fi
 
+	run_bt_commands \
+		"trust $ADDRESS" \
+		"connect $ADDRESS" \
+		"quit"
+
 	printf "\nConnecting..."
 
-	if ! timeout $TIMEOUT bluetoothctl connect "$ADDRESS" > /dev/null; then
-		notify-send "Bluetooth" "Failed to connect" -i "package-purge"
+	local connected
+	if ! wait_for_info_field "$ADDRESS" "Connected" "yes"; then
+		connected=$(bt_info_field "$ADDRESS" "Connected")
+		notify-send "Bluetooth" "Failed to connect. See /tmp/yudots-bluetooth.log" \
+			-i "package-purge"
 		exit 1
 	fi
 
