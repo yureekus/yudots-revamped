@@ -4,9 +4,9 @@
   <img src="./preview.png" alt="Preview of yudots-revamped" />
 </p>
 
-An opinionated Artix Linux desktop setup built around Niri, Waybar, Matugen, and a small pile of personal preferences.
+An opinionated NixOS desktop setup built around Niri, Waybar, Matugen, and a small pile of personal preferences.
 
-This is a cleaned-up, scriptable version of my dots. It is meant for a mostly fresh Artix Linux install running OpenRC, and the installer is intentionally hands-on about replacing configs so the full setup comes up correctly.
+This repository is now packaged as a flake. The old Artix/OpenRC installer has been removed in favor of a NixOS module for system services and packages plus a Home Manager module that seeds the user config into place.
 
 ## What This Includes
 
@@ -17,121 +17,62 @@ This is a cleaned-up, scriptable version of my dots. It is meant for a mostly fr
 - `ghostty` as the terminal
 - `matugen` for wallpaper-based theming
 - GTK / Qt theming, fonts, wallpapers, and helper scripts
-- OpenRC service setup for desktop essentials
-
-## Supported System
-
-This repository is currently made for:
-
-- Artix Linux
-- OpenRC
-- a clean or mostly clean user config
-
-The installer checks for Artix and OpenRC and refuses to continue anywhere else. If you want to use these dots on Arch, another Artix init, or a different distro entirely, you will need to port them manually.
-
-## Warning
-
-These dotfiles are personal and opinionated.
-
-Running the installer will:
-
-- install a full package set, including apps you may not want
-- replace matching files and directories inside `~/.config`
-- replace `~/.bash_profile`
-- copy bundled wallpapers into `~/.local/share/yudots-revamped`
-- write Matugen wallpaper state into `~/.local/state/matugen`
-- install a udev rule and an elogind config under `/etc`
-- enable required OpenRC services
-- switch from ConnMan to NetworkManager if needed
-
-If you already have a heavily customized setup, back it up first.
-
-## Installed Software
-
-The installer pulls in a fairly complete desktop stack. The main package groups are:
-
-### Desktop
-
-- `dbus`
-- `elogind`
-- `seatd`
-- `power-profiles-daemon`
-- `niri`
-- `xorg-xwayland`
-- `xwayland-satellite`
-- `xdg-desktop-portal-gnome`
-- `waybar`
-- `fuzzel`
-- `mako`
-- `swayidle`
-- `swww`
-- `zenity`
-
-### Audio
-
-- `pipewire`
-- `wireplumber`
-- `pipewire-pulse`
-- `wiremix-git`
-
-### Apps
-
-- `helium-browser-bin`
-- `vscodium-bin`
-- `flclashx-bin`
-- `dolphin`
-- `ghostty`
-- `fish`
-- `starship`
-- `matugen-bin`
-- `swaylock-effects`
-- `brightnessctl`
-- `fzf`
-- `pacman-contrib`
-
-### Fonts And Themes
-
-- `ttf-dejavu`
-- `ttf-firacode-nerd`
-- `ttf-liberation`
-- `ttf-ms-fonts`
-- `otf-commit-mono-nerd`
-- `noto-fonts`
-- `noto-fonts-cjk`
-- `noto-fonts-emoji`
-- `noto-fonts-extra`
-- `adw-gtk-theme`
-- `breeze-icons`
-- `breeze-gtk`
-- `qt6ct-kde`
-- `qt5ct-kde`
-- `breeze`
-- `breeze5`
-
-### Networking
-
-- `bluez`
-- `bluez-openrc`
-- `bluez-utils`
-- `networkmanager`
-- `networkmanager-openrc`
+- NixOS service wiring for audio, bluetooth, portals, power profiles, and NetworkManager
 
 ## Install
 
-Clone the repository and run the installer as your normal user:
+Add the repo as a flake input and import both exported modules.
 
-```bash
-git clone https://github.com/yureekus/yudots-revamped.git
-cd yudots-revamped
-chmod +x install.sh
-./install.sh
+```nix
+{
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    home-manager.url = "github:nix-community/home-manager";
+    home-manager.inputs.nixpkgs.follows = "nixpkgs";
+    yudots.url = "github:yureekus/yudots-revamped";
+  };
+
+  outputs = { nixpkgs, home-manager, yudots, ... }: {
+    nixosConfigurations.my-host = nixpkgs.lib.nixosSystem {
+      system = "x86_64-linux";
+      modules = [
+        ./configuration.nix
+        home-manager.nixosModules.home-manager
+        yudots.nixosModules.default
+        {
+          programs.yudots = {
+            enable = true;
+            user = "your-user";
+          };
+
+          home-manager.users.your-user = {
+            imports = [ yudots.homeModules.default ];
+
+            programs.yudots = {
+              enable = true;
+              launchFromTty1 = true;
+            };
+
+            home.stateVersion = "25.05";
+          };
+        }
+      ];
+    };
+  };
+}
 ```
 
-The script uses `sudo` when needed, installs `paru` from source if it is missing, and logs the full run to `/tmp/yudots-revamped-install-YYYYMMDD-HHMMSS.log`.
+Then apply it with:
 
-## What Gets Replaced
+```bash
+sudo nixos-rebuild switch --flake .#my-host
+```
 
-The installer removes and recopies these paths when present:
+## Module Behavior
+
+The NixOS module exports `programs.yudots` and enables the core desktop services, package set, udev rule, and logind lid settings used by these dotfiles.
+
+The Home Manager module exports `programs.yudots` and seeds these paths into your home directory:
 
 - `~/.config/fish`
 - `~/.config/fuzzel`
@@ -146,35 +87,34 @@ The installer removes and recopies these paths when present:
 - `~/.config/swaylock`
 - `~/.config/waybar`
 - `~/.bash_profile`
-- `~/.local/share/yudots-revamped`
+- `~/.local/share/yudots-revamped/wallpapers`
 
-It also installs:
+`niri/custom` is only seeded when it does not already exist, so per-machine overrides survive later rebuilds.
 
-- `/etc/udev/rules.d/99-yudots-micmute-led.rules`
-- `/etc/elogind/logind.conf.d/90-yudots-lid-lock.conf`
+Matugen-generated files remain writable. On each Home Manager activation the repo defaults are copied in, then the saved wallpaper state is reapplied when possible so the active theme is not lost.
+
+## Notes
+
+- The Waybar update module is still present, but on NixOS it intentionally shows a neutral state and tells you to use `nixos-rebuild` instead of trying to run pacman.
+- The Ghostty config no longer hardcodes `/usr/bin/fish`, which avoids the usual NixOS path breakage.
+- Some optional applications from the old Arch setup are not forced here. The NixOS module only installs packages that are present in the selected `nixpkgs`, and you can extend that with `programs.yudots.extraPackages`.
+- Audio recovery helper:
+  - `~/.config/niri/scripts/audio-recover ensure`
+  - `~/.config/niri/scripts/audio-recover status`
+  - `~/.config/niri/scripts/audio-recover watch`
 
 ## Repository Structure
 
 ```text
 .
-|-- config/        # User config copied into ~/.config
-|-- system/        # System-level files copied into /etc
+|-- config/        # User config seeded by the Home Manager module
+|-- nix/           # NixOS and Home Manager modules
+|-- system/        # Reference system files reflected in the NixOS module
 |-- wallpapers/    # Bundled wallpapers copied into ~/.local/share
-|-- install.sh     # Main installer
+|-- flake.nix      # Flake entrypoint
 |-- preview.png    # Screenshot used in this README
 `-- README.md
 ```
-
-## Notes
-
-- The installer expects a base-ish system and does not try to preserve local tweaks for matching config directories.
-- If ConnMan is currently active, the script migrates to NetworkManager and checks connectivity before removing ConnMan packages.
-- The installer makes sure your user is in the `video` group for brightness control and switches your login shell to `bash` if needed.
-- After install, relogin or reboot. Rebooting is the safer option.
-- Audio recovery helper:
-  - `~/.config/niri/scripts/audio-recover ensure`
-  - `~/.config/niri/scripts/audio-recover status`
-  - `~/.config/niri/scripts/audio-recover watch`
 
 ## Credits
 

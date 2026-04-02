@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 #
-# Update packages from the official and unofficial user repositories
-# Passing "module" returns the update status in JSON format
+# Update packages from the system package manager.
+# Passing "module" returns the update status in JSON format.
 #
-# Requires pacman-contrib (checkupdates)
+# On Arch-based systems this uses pacman/checkupdates.
+# On NixOS it reports a neutral state and points the user at nixos-rebuild.
 #
 # Author:  Jesse Mirabel <sejjymvm@gmail.com>
 # Date:    August 16, 2025
@@ -26,7 +27,16 @@ get_helper() {
 	done
 }
 
+is_nixos() {
+	[[ -f /etc/NIXOS ]]
+}
+
 check_updates() {
+	if is_nixos || ! command -v checkupdates >/dev/null 2>&1; then
+		UNSUPPORTED=true
+		return 0
+	fi
+
 	local output status
 
 	output=$(timeout $TIMEOUT checkupdates)
@@ -57,6 +67,20 @@ check_updates() {
 }
 
 update_packages() {
+	if is_nixos; then
+		notify-send "NixOS Update" "Run nixos-rebuild switch --flake <path>#<host>"
+		printf "Use nixos-rebuild switch --flake <path>#<host> to update this system.\n"
+		read -rsn 1 -p "Press any key to exit..."
+		return 0
+	fi
+
+	if ! command -v checkupdates >/dev/null 2>&1 || ! command -v pacman >/dev/null 2>&1; then
+		notify-send "Update Unsupported" "No supported pacman update tooling was found"
+		printf "No supported pacman update tooling was found.\n"
+		read -rsn 1 -p "Press any key to exit..."
+		return 0
+	fi
+
 	printf "Updating pacman packages...\n"
 	sudo pacman -Syu
 
@@ -77,6 +101,9 @@ display_module() {
 	if $FAILED; then
 		icon='󰒑'
 		tooltip="<b>Failed to fetch updates</b>\nRight-click to retry"
+	elif $UNSUPPORTED; then
+		icon='󱓞'
+		tooltip="Updates are managed outside Waybar on this system"
 	elif ((UPDATES + AUR_UPDATES == 0)); then
 		icon='󰸟'
 		tooltip="No updates available"
@@ -97,6 +124,7 @@ display_module() {
 
 main() {
 	FAILED=false
+	UNSUPPORTED=false
 	UPDATES=0
 	AUR_UPDATES=0
 
