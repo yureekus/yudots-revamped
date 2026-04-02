@@ -87,7 +87,6 @@ The installer pulls in a fairly complete desktop stack. The main package groups 
 - `swaylock-effects`
 - `brightnessctl`
 - `fzf`
-- `pacman-contrib`
 
 ### Fonts And Themes
 

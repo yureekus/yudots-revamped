@@ -82,8 +82,8 @@ install_required_packages() {
         swaylock-effects
         brightnessctl
         fzf
-        pacman-contrib
     )
+
 
     local -a font_and_theme_packages=(
         ttf-dejavu

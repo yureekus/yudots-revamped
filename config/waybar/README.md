@@ -91,7 +91,6 @@ Feel free to open a pull request to add new themes! :^)
 	| `brightnessctl`        | `brightnessctl` | Lightweight brightness control tool<tr></tr>                                   |
 	| `fzf`                  | `fzf`           | Command-line fuzzy finder<tr></tr>                                             |
 	| `networkmanager`       | `nmcli`         | Network connection manager and user applications<tr></tr>                      |
-	| `pacman-contrib`       | `checkupdates`  | Contributed scripts and tools for pacman systems<tr></tr>                      |
 	| `otf-commit-mono-nerd` | -               | Patched font Commit Mono from nerd fonts library                               |
 
 	</details>
@@ -138,14 +137,10 @@ $terminal = kitty
 bind = $mod, B, exec, $terminal -e $scripts/bluetooth
 bind = $mod, N, exec, $terminal -e $scripts/network
 bind = $mod, O, exec, $terminal -e $scripts/power
-bind = $mod, U, exec, $terminal -e $scripts/update
 
 # Toggle off Bluetooth/Wi-Fi
 bind = $mod Alt, B, exec, $scripts/bluetooth off
 bind = $mod Alt, N, exec, $scripts/network off
-
-# Refresh `custom/update` module
-bind = $mod Alt, U, exec, pkill -RTMIN+1 waybar
 
 # Adjust volume
 bindl = , XF86AudioMicMute, exec, $scripts/volume input mute

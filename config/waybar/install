@@ -12,7 +12,6 @@ deps=(
 	brightnessctl
 	fzf
 	networkmanager # nmcli
-	pacman-contrib # checkupdates
 	otf-commit-mono-nerd
 )
 
