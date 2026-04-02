@@ -1,6 +1,6 @@
 {
 	"backlight": {
-		"interval": 30,
+		"interval": 5,
 		"format": "{icon} {percent}%",
 		"format-icons": [
 			"", "", "", "", "", "", "", "", ""

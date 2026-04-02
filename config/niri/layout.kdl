@@ -2,7 +2,6 @@ layout {
     gaps 20
     center-focused-column "never"
     always-center-single-column
-    empty-workspace-above-first
     default-column-display "normal"
 
     preset-column-widths {

@@ -1,12 +1,12 @@
 {
 	"temperature": {
-		"thermal-zone": 1,
+		"thermal-zone": 0,
 		// "hwmon-path":
 		// "hwmon-path-abs":
 		// "input-filename":
 		// "warning-threshold":
 		"critical-threshold": 90,
-		"interval": 30,
+		"interval": 5,
 		// "format-warning":
 		"format-critical": "󰀦 {temperatureC}°C",
 		"format": "{icon} {temperatureC}°C",
