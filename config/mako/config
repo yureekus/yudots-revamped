@@ -18,6 +18,15 @@ markup=1
 actions=1
 max-icon-size=48
 icon-border-radius=0
+on-button-right=dismiss
+
+[actionable]
+on-button-left=invoke-default-action
+on-touch=invoke-default-action
+
+[!actionable]
+on-button-left=dismiss
+on-touch=dismiss
 
 include=~/.config/mako/mako-colors
 
