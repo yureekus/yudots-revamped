@@ -9,7 +9,8 @@ property="ActiveProfile"
 signal_number="2"
 runtime_dir="${XDG_RUNTIME_DIR:-/tmp}"
 lock_dir="$runtime_dir/yudots-waybar-mode.lock"
-state_file="$runtime_dir/yudots-waybar-mode.state"
+
+default_profiles=(balanced power-saver performance)
 
 have() {
     command -v "$1" >/dev/null 2>&1
@@ -19,27 +20,11 @@ notify_waybar() {
     pkill -RTMIN+"$signal_number" waybar >/dev/null 2>&1 || true
 }
 
-cache_profile() {
-    local profile="$1"
-
-    printf '%s\n' "$profile" > "$state_file"
-}
-
-read_cached_profile() {
-    if [[ -s "$state_file" ]]; then
-        cat "$state_file"
-        return 0
-    fi
-
-    return 1
-}
-
-read_profile() {
+get_profile() {
     local profile=""
 
     if have powerprofilesctl; then
-        profile="$(powerprofilesctl get 2>/dev/null || true)"
-        if [[ -n "$profile" ]]; then
+        if profile="$(powerprofilesctl get 2>/dev/null)" && [[ -n "$profile" ]]; then
             printf '%s\n' "$profile"
             return 0
         fi
@@ -75,42 +60,96 @@ read_profile() {
     return 1
 }
 
-write_profile() {
+set_profile() {
     local profile="$1"
 
-    if have powerprofilesctl; then
-        powerprofilesctl set "$profile" >/dev/null 2>&1
+    if have powerprofilesctl && powerprofilesctl set "$profile" >/dev/null 2>&1; then
         return 0
     fi
 
-    if have busctl; then
-        busctl set-property --system "$service" "$object_path" "$interface" "$property" s "$profile" >/dev/null
+    if have busctl && busctl set-property --system "$service" "$object_path" "$interface" "$property" s "$profile" >/dev/null 2>&1; then
         return 0
     fi
 
-    if have gdbus; then
-        gdbus call --system \
+    if have gdbus && gdbus call --system \
             --dest "$service" \
             --object-path "$object_path" \
             --method org.freedesktop.DBus.Properties.Set \
             "$interface" \
             "$property" \
-            "<'$profile'>" >/dev/null
+            "<'$profile'>" >/dev/null 2>&1; then
         return 0
     fi
 
     return 1
 }
 
-sync_cached_profile() {
-    local profile=""
+list_profiles() {
+    local line=""
+    local parsed=""
+    local found_any="0"
 
-    profile="$(read_profile 2>/dev/null || true)"
-    if [[ -n "$profile" ]]; then
-        cache_profile "$profile"
-        printf '%s\n' "$profile"
-        return 0
+    if have powerprofilesctl; then
+        while IFS= read -r line; do
+            parsed="$(printf '%s\n' "$line" | sed -nE 's/^\*?[[:space:]]*(power-saver|balanced|performance):.*$/\1/p')"
+            if [[ -n "$parsed" ]]; then
+                printf '%s\n' "$parsed"
+                found_any="1"
+            fi
+        done < <(powerprofilesctl list 2>/dev/null || true)
+
+        if [[ "$found_any" == "1" ]]; then
+            return 0
+        fi
     fi
+
+    printf '%s\n' "${default_profiles[@]}"
+}
+
+profile_available() {
+    local profile="$1"
+    local p=""
+
+    while IFS= read -r p; do
+        if [[ "$p" == "$profile" ]]; then
+            return 0
+        fi
+    done < <(list_profiles)
+
+    return 1
+}
+
+next_candidates() {
+    local current="$1"
+
+    case "$current" in
+        balanced)
+            printf '%s\n' performance power-saver balanced
+            ;;
+        power-saver)
+            printf '%s\n' balanced performance power-saver
+            ;;
+        performance)
+            printf '%s\n' power-saver balanced performance
+            ;;
+        *)
+            printf '%s\n' balanced power-saver performance
+            ;;
+    esac
+}
+
+await_profile() {
+    local expected="$1"
+    local current=""
+    local i=""
+
+    for i in $(seq 1 25); do
+        current="$(get_profile 2>/dev/null || true)"
+        if [[ "$current" == "$expected" ]]; then
+            return 0
+        fi
+        sleep 0.04
+    done
 
     return 1
 }
@@ -132,79 +171,6 @@ profile_meta() {
     esac
 }
 
-next_profile() {
-    case "$1" in
-        power-saver)
-            printf 'balanced\n'
-            ;;
-        balanced)
-            printf 'performance\n'
-            ;;
-        performance)
-            printf 'power-saver\n'
-            ;;
-        *)
-            printf 'balanced\n'
-            ;;
-    esac
-}
-
-await_profile() {
-    local expected="$1"
-    local attempt=""
-    local current=""
-
-    for attempt in $(seq 1 20); do
-        current="$(read_profile 2>/dev/null || true)"
-        if [[ "$current" == "$expected" ]]; then
-            return 0
-        fi
-
-        sleep 0.05
-    done
-
-    return 1
-}
-
-with_lock() {
-    if mkdir "$lock_dir" 2>/dev/null; then
-        trap 'rmdir "$lock_dir" >/dev/null 2>&1 || true' EXIT
-        "$@"
-        return 0
-    fi
-
-    return 1
-}
-
-apply_next_profile() {
-    local current=""
-    local target=""
-
-    current="$(read_cached_profile 2>/dev/null || true)"
-    if [[ -z "$current" ]]; then
-        current="$(read_profile 2>/dev/null || true)"
-    fi
-    target="$(next_profile "$current")"
-
-    cache_profile "$target"
-    notify_waybar
-
-    write_profile "$target" || return 1
-    if await_profile "$target"; then
-        cache_profile "$target"
-    else
-        sync_cached_profile || true
-    fi
-    notify_waybar
-}
-
-toggle_async() {
-    nohup bash -c '
-        set -euo pipefail
-        "$1" toggle-now
-    ' _ "$0" >/dev/null 2>&1 &
-}
-
 print_module() {
     local profile=""
     local icon=""
@@ -212,13 +178,9 @@ print_module() {
     local class=""
     local -a meta=()
 
-    profile="$(read_cached_profile 2>/dev/null || true)"
+    profile="$(get_profile 2>/dev/null || true)"
     if [[ -z "$profile" ]]; then
-        profile="$(sync_cached_profile 2>/dev/null || true)"
-    fi
-
-    if [[ -z "$profile" ]]; then
-        printf '{ "text": "󰧑", "alt": "unknown", "class": "unknown", "tooltip": "Power profile unavailable" }\n'
+        printf '{ "text": "󰧑", "alt": "unavailable", "class": "unknown", "tooltip": "power-profiles-daemon unavailable" }\n'
         return 0
     fi
 
@@ -230,10 +192,31 @@ print_module() {
     printf '{ "text": "%s", "alt": "%s", "class": "%s", "tooltip": "%s" }\n' "$icon" "$class" "$class" "$label"
 }
 
-toggle_now() {
-    (
-        with_lock apply_next_profile
-    ) >/dev/null 2>&1
+toggle_profile() {
+    local current=""
+    local target=""
+
+    current="$(get_profile 2>/dev/null || true)"
+
+    for target in $(next_candidates "$current"); do
+        set_profile "$target" || continue
+        if await_profile "$target"; then
+            notify_waybar
+            return 0
+        fi
+    done
+
+    notify_waybar
+    return 1
+}
+
+with_lock() {
+    if ! mkdir "$lock_dir" 2>/dev/null; then
+        return 1
+    fi
+
+    trap 'rmdir "$lock_dir" >/dev/null 2>&1 || true' EXIT
+    "$@"
 }
 
 case "${1:-module}" in
@@ -241,16 +224,13 @@ case "${1:-module}" in
         print_module
         ;;
     toggle)
-        toggle_async
-        ;;
-    toggle-now)
-        toggle_now
+        with_lock toggle_profile >/dev/null 2>&1 || true
         ;;
     get)
-        read_profile
+        get_profile
         ;;
     *)
-        printf 'usage: %s [module|toggle|toggle-now|get]\n' "$0" >&2
+        printf 'usage: %s [module|toggle|get]\n' "$0" >&2
         exit 1
         ;;
 esac
