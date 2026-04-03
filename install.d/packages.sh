@@ -40,6 +40,27 @@ install_package_group() {
     run_cmd paru -S --needed --noconfirm --skipreview --color always "${packages[@]}"
 }
 
+install_librewolf_package() {
+    local -a librewolf_candidates=(
+        librewolf
+        librewolf-bin
+    )
+    local package_name=""
+
+    require_command paru || return 1
+
+    for package_name in "${librewolf_candidates[@]}"; do
+        if paru -Si "$package_name" >/dev/null 2>&1; then
+            info "resolved LibreWolf package: $package_name"
+            run_cmd paru -S --needed --noconfirm --skipreview --color always "$package_name" || return 1
+            return 0
+        fi
+    done
+
+    error "could not find a supported LibreWolf package candidate: ${librewolf_candidates[*]}"
+    return 1
+}
+
 install_required_packages() {
     local -a desktop_packages=(
         dbus
@@ -71,7 +92,6 @@ install_required_packages() {
     )
 
     local -a app_packages=(
-        helium-browser-bin
         vscodium-bin
         flclashx-bin
         dolphin
@@ -115,6 +135,7 @@ install_required_packages() {
     install_package_group "desktop" "${desktop_packages[@]}" || return 1
     install_package_group "audio" "${audio_packages[@]}" || return 1
     install_package_group "apps" "${app_packages[@]}" || return 1
+    install_librewolf_package || return 1
     install_package_group "fonts and themes" "${font_and_theme_packages[@]}" || return 1
     install_package_group "network" "${network_packages[@]}"
 }
@@ -163,4 +184,20 @@ install_elogind_lid_lock_config() {
     else
         warn "loginctl was not found; reload elogind manually after install"
     fi
+}
+
+install_librewolf_policy_config() {
+    local source_policy="$repo_system_dir/librewolf/policies/policies.json"
+    local target_policy_dir="/etc/librewolf/policies"
+    local target_policy="$target_policy_dir/policies.json"
+
+    require_commands install sudo || return 1
+
+    if [[ ! -f "$source_policy" ]]; then
+        error "missing LibreWolf policy file: $source_policy"
+        return 1
+    fi
+
+    run_cmd sudo install -d "$target_policy_dir" || return 1
+    run_cmd sudo install -Dm644 "$source_policy" "$target_policy" || return 1
 }

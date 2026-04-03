@@ -94,6 +94,7 @@ main() {
     run_step "installing bootstrap packages for building paru" bootstrap_build_tools || exit 1
     run_step "installing paru from source" install_paru_from_source || exit 1
     run_step "installing the required packages" install_required_packages || exit 1
+    run_step "installing the LibreWolf extension policy" install_librewolf_policy_config || exit 1
     run_step "ensuring brightness permissions (video group membership)" ensure_video_group_membership || exit 1
     run_step "installing the microphone LED permission rule" install_micmute_led_rule || exit 1
     run_step "installing the elogind lid-close lock configuration" install_elogind_lid_lock_config || exit 1
