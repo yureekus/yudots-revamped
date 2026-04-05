@@ -36,13 +36,11 @@ These dotfiles are personal and opinionated.
 Running the installer will:
 
 - install a full package set, including apps you may not want
-- install LibreWolf without removing an existing `helium-browser-bin` install
 - replace matching files and directories inside `~/.config`
 - replace `~/.bash_profile`
 - copy bundled wallpapers into `~/.local/share/yudots-revamped`
 - write Matugen wallpaper state into `~/.local/state/matugen`
 - install a udev rule and an elogind config under `/etc`
-- install a LibreWolf policy under `/etc/librewolf/policies`
 - enable required OpenRC services
 - switch from ConnMan to NetworkManager if needed
 
@@ -78,7 +76,8 @@ The installer pulls in a fairly complete desktop stack. The main package groups 
 
 ### Apps
 
-- `librewolf` or `librewolf-bin`
+- `helium-browser-bin`
+- `visual-studio-code-bin`
 - `vscodium-bin`
 - `flclashx-bin`
 - `dolphin`
@@ -153,7 +152,6 @@ It also installs:
 
 - `/etc/udev/rules.d/99-yudots-micmute-led.rules`
 - `/etc/elogind/logind.conf.d/90-yudots-lid-lock.conf`
-- `/etc/librewolf/policies/policies.json`
 
 ## Repository Structure
 
@@ -171,7 +169,6 @@ It also installs:
 
 - The installer expects a base-ish system and does not try to preserve local tweaks for matching config directories.
 - If ConnMan is currently active, the script migrates to NetworkManager and checks connectivity before removing ConnMan packages.
-- LibreWolf gets a system policy that auto-installs CanvasBlocker, ClearURLs, I still don't care about cookies, LocalCDN, Privacy Badger, SponsorBlock, and uBlock Origin.
 - The installer makes sure your user is in the `video` group for brightness control and switches your login shell to `bash` if needed.
 - After install, relogin or reboot. Rebooting is the safer option.
 - Audio recovery helper:
