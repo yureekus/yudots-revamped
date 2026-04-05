@@ -33,9 +33,9 @@ window-rule {
     open-floating true
 }
 
-// Put the dedicated swww overview wallpaper inside the overview backdrop.
+// Put the dedicated awww overview wallpaper inside the overview backdrop.
 layer-rule {
-    match namespace="^swww-daemonoverview$"
+    match namespace="^awww-daemonoverview$"
     place-within-backdrop true
 }
 

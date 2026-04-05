@@ -10,7 +10,7 @@ skip_theme_reapply_once="$state_dir/skip_theme_reapply_once"
 
 usage() {
     echo "Usage:"
-    echo "  $0 set <image> [additional swww img args...]"
+    echo "  $0 set <image> [additional awww img args...]"
     echo "  $0 reapply"
 }
 
@@ -38,47 +38,47 @@ build_overview_blur() {
     ffmpeg -y -loglevel error -i "$image" -frames:v 1 -vf "gblur=sigma=30,colorchannelmixer=rr=0.45:gg=0.45:bb=0.45" "$overview_blur_file"
 }
 
-start_swww_daemon_if_needed() {
+start_awww_daemon_if_needed() {
     local namespace="$1"
 
     if [[ -n "$namespace" ]]; then
-        if swww query --namespace "$namespace" >/dev/null 2>&1; then
+        if awww query --namespace "$namespace" >/dev/null 2>&1; then
             return 0
         fi
 
-        swww-daemon --namespace "$namespace" >/dev/null 2>&1 &
+        awww-daemon --namespace "$namespace" >/dev/null 2>&1 &
 
         for _ in {1..20}; do
-            if swww query --namespace "$namespace" >/dev/null 2>&1; then
+            if awww query --namespace "$namespace" >/dev/null 2>&1; then
                 return 0
             fi
             sleep 0.1
         done
 
-        echo "Failed to start swww-daemon namespace: $namespace" >&2
+        echo "Failed to start awww-daemon namespace: $namespace" >&2
         exit 1
     fi
 
-    if swww query >/dev/null 2>&1; then
+    if awww query >/dev/null 2>&1; then
         return 0
     fi
 
-    swww-daemon >/dev/null 2>&1 &
+    awww-daemon >/dev/null 2>&1 &
 
     for _ in {1..20}; do
-        if swww query >/dev/null 2>&1; then
+        if awww query >/dev/null 2>&1; then
             return 0
         fi
         sleep 0.1
     done
 
-    echo "Failed to start default swww-daemon" >&2
+    echo "Failed to start default awww-daemon" >&2
     exit 1
 }
 
-ensure_swww_daemons() {
-    start_swww_daemon_if_needed ""
-    start_swww_daemon_if_needed "overview"
+ensure_awww_daemons() {
+    start_awww_daemon_if_needed ""
+    start_awww_daemon_if_needed "overview"
 }
 
 set_wallpaper() {
@@ -89,10 +89,10 @@ set_wallpaper() {
     printf '%s\n' "$image" > "$state_file"
     rm -f "$skip_theme_reapply_once"
 
-    ensure_swww_daemons
+    ensure_awww_daemons
     build_overview_blur "$image"
-    swww img "$image" --transition-type none "$@"
-    swww img --namespace overview "$overview_blur_file" --transition-type none "$@"
+    awww img "$image" --transition-type none "$@"
+    awww img --namespace overview "$overview_blur_file" --transition-type none "$@"
     apply_theme "$image"
 }
 
@@ -111,23 +111,23 @@ reapply() {
         exit 1
     fi
 
-    ensure_swww_daemons
+    ensure_awww_daemons
     build_overview_blur "$image"
 
     if [[ -f "$skip_theme_reapply_once" ]]; then
         rm -f "$skip_theme_reapply_once"
-        swww img "$image" --transition-type none
-        swww img --namespace overview "$overview_blur_file" --transition-type none
+        awww img "$image" --transition-type none
+        awww img --namespace overview "$overview_blur_file" --transition-type none
         exit 0
     fi
 
-    swww img "$image" --transition-type none
-    swww img --namespace overview "$overview_blur_file" --transition-type none
+    awww img "$image" --transition-type none
+    awww img --namespace overview "$overview_blur_file" --transition-type none
     apply_theme "$image"
 }
 
-if ! command -v swww >/dev/null 2>&1; then
-    echo "Missing required command: swww" >&2
+if ! command -v awww >/dev/null 2>&1; then
+    echo "Missing required command: awww" >&2
     exit 1
 fi
 

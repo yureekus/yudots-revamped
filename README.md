@@ -64,7 +64,7 @@ The installer pulls in a fairly complete desktop stack. The main package groups 
 - `fuzzel`
 - `mako`
 - `swayidle`
-- `swww`
+- `awww`
 - `zenity`
 
 ### Audio

@@ -57,7 +57,7 @@ install_required_packages() {
         fuzzel
         mako
         swayidle
-        swww
+        awww
         jack2
         ffmpeg
         zenity
