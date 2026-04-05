@@ -13,7 +13,7 @@ output "DP-3" {
 // eDP-1 is mostly used on laptops
 // ThinkPad*
 output "eDP-1" {
-    mode "1920x1200@60.003"
+    mode "1536x960@60.003"
     scale 1.0
     variable-refresh-rate
     focus-at-startup

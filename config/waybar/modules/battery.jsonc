@@ -4,7 +4,7 @@
 		// "adapter":
 		// "design-capacity":
 		// "full-at":
-		"interval": 5,
+		"interval": 60,
 		"states": {
 			"warning": 20,
 			"critical": 10

@@ -7,10 +7,8 @@ spawn-sh-at-startup "sleep 2 && ~/.config/niri/scripts/micmute-led watch"
 // Desktop UI services.
 spawn-sh-at-startup "sleep 1 && mako"
 spawn-sh-at-startup "sleep 1 && /usr/lib/polkit-gnome/polkit-gnome-authentication-agent-1"
-spawn-sh-at-startup "sleep 1 && swww-daemon"
-spawn-sh-at-startup "sleep 1 && swww-daemon --namespace overview"
 spawn-sh-at-startup "sleep 1 && ~/.config/niri/scripts/themectl reapply"
 spawn-sh-at-startup "sleep 1 && ~/.config/waybar/scripts/run"
 
 // Idle behavior and lock flow.
-spawn-sh-at-startup "sleep 1 && swayidle -w timeout 240 '~/.config/niri/scripts/lock' timeout 300 'loginctl suspend' lock '~/.config/niri/scripts/lock' before-sleep '~/.config/niri/scripts/lock'"
+spawn-sh-at-startup "sleep 1 && swayidle -w timeout 180 '~/.config/niri/scripts/lock' timeout 240 'loginctl suspend' lock '~/.config/niri/scripts/lock' before-sleep '~/.config/niri/scripts/lock'"
