@@ -2,7 +2,7 @@
 	"custom/cpu_temperature": {
 		"exec": "~/.config/waybar/scripts/cpu_temperature",
 		"return-type": "json",
-		"interval": 10,
+		"interval": 5,
 		"format": "{}",
 		// "rotate":
 		"min-length": 8,

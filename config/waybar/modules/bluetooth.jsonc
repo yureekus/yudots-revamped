@@ -2,7 +2,7 @@
 	"bluetooth": {
 		// "controller":
 		// "format-device-preference":
-		"interval": 30,
+		"interval": 10,
 		"format": "󰂯",
 		"format-disabled": "󰂲",
 		"format-off": "󰂲",
